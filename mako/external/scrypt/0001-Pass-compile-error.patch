@@ -1,0 +1,31 @@
+From 11fd8ac77e398128fd3d9850e02bcf04285bb937 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Thu, 5 Dec 2013 16:01:51 +0800
+Subject: [PATCH] Pass compile error
+
+---
+ lib/crypto/crypto_scrypt-neon-salsa208.h |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/lib/crypto/crypto_scrypt-neon-salsa208.h b/lib/crypto/crypto_scrypt-neon-salsa208.h
+index a3b1019..08f6b6e 100644
+--- a/lib/crypto/crypto_scrypt-neon-salsa208.h
++++ b/lib/crypto/crypto_scrypt-neon-salsa208.h
+@@ -38,10 +38,10 @@ salsa20_8_intrinsic(void * input)
+   uint32x4_t x8x9x10x11;
+   uint32x4_t x12x13x14x15;
+ 
+-  x0x1x2x3 = vld1q_u8((uint8_t *) input);
+-  x4x5x6x7 = vld1q_u8(16 + (uint8_t *) input);
+-  x8x9x10x11 = vld1q_u8(32 + (uint8_t *) input);
+-  x12x13x14x15 = vld1q_u8(48 + (uint8_t *) input);
++  x0x1x2x3 = (uint32x4_t)vld1q_u8((uint8_t *) input);
++  x4x5x6x7 = (uint32x4_t)vld1q_u8(16 + (uint8_t *) input);
++  x8x9x10x11 = (uint32x4_t)vld1q_u8(32 + (uint8_t *) input);
++  x12x13x14x15 = (uint32x4_t)vld1q_u8(48 + (uint8_t *) input);
+ 
+   x0x1x10x11 = vcombine_u32(vget_low_u32(x0x1x2x3), vget_high_u32(x8x9x10x11));
+   x4x5x14x15 = vcombine_u32(vget_low_u32(x4x5x6x7), vget_high_u32(x12x13x14x15));
+-- 
+1.7.9.5
+

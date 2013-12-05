@@ -1,0 +1,290 @@
+From 1ad83a40151a61db6af14a989abbbf02fe9d9bac Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Thu, 5 Dec 2013 14:40:06 +0800
+Subject: [PATCH 3/8] Pass compile error for nativewindow and gonkDisplay
+
+---
+ widget/gonk/libdisplay/FramebufferSurface.cpp    |   42 ++++++++++++++++++++--
+ widget/gonk/libdisplay/FramebufferSurface.h      |    7 ++++
+ widget/gonk/libdisplay/GonkDisplayJB.cpp         |    8 +++--
+ widget/gonk/libdisplay/moz.build                 |    2 +-
+ widget/gonk/libui/EventHub.cpp                   |    3 +-
+ widget/gonk/libui/cutils_log.h                   |   26 +++++++++-----
+ widget/gonk/nativewindow/FakeSurfaceComposer.cpp |   11 ++++++
+ widget/gonk/nsAppShell.cpp                       |    3 +-
+ 8 files changed, 86 insertions(+), 16 deletions(-)
+
+diff --git a/widget/gonk/libdisplay/FramebufferSurface.cpp b/widget/gonk/libdisplay/FramebufferSurface.cpp
+index 99dbfbb..a35fcfe 100644
+--- a/widget/gonk/libdisplay/FramebufferSurface.cpp
++++ b/widget/gonk/libdisplay/FramebufferSurface.cpp
+@@ -49,7 +49,28 @@ namespace android {
+  * This implements the (main) framebuffer management. This class
+  * was adapted from the version in SurfaceFlinger
+  */
+-
++// Todo kitkat
++#if ANDROID_VERSION == 19
++FramebufferSurface::FramebufferSurface(HWComposer& hwc, int disp,
++        const sp<IGraphicBufferConsumer>& consumer) :
++    ConsumerBase(consumer),
++    mDisplayType(disp),
++    mCurrentBufferSlot(-1),
++    mCurrentBuffer(0)
++    //mHwc(hwc)
++{
++    mName = "FramebufferSurface";
++    mConsumer->setConsumerName(mName);
++#if 0
++    mConsumer->setConsumerUsageBits(GRALLOC_USAGE_HW_FB |
++                                       GRALLOC_USAGE_HW_RENDER |
++                                       GRALLOC_USAGE_HW_COMPOSER);
++    mConsumer->setDefaultBufferFormat(mHwc.getFormat(disp));
++    mConsumer->setDefaultBufferSize(mHwc.getWidth(disp),  mHwc.getHeight(disp));
++    mConsumer->setDefaultMaxBufferCount(NUM_FRAMEBUFFER_SURFACE_BUFFERS);
++#endif
++}
++#else
+ FramebufferSurface::FramebufferSurface(int disp, uint32_t width, uint32_t height, uint32_t format, sp<IGraphicBufferAlloc>& alloc) :
+     ConsumerBase(new BufferQueue(true, alloc)),
+     mDisplayType(disp),
+@@ -67,12 +88,17 @@ FramebufferSurface::FramebufferSurface(int disp, uint32_t width, uint32_t height
+     mBufferQueue->setSynchronousMode(true);
+     mBufferQueue->setDefaultMaxBufferCount(NUM_FRAMEBUFFER_SURFACE_BUFFERS);
+ }
++#endif
+ 
+ status_t FramebufferSurface::nextBuffer(sp<GraphicBuffer>& outBuffer, sp<Fence>& outFence) {
+     Mutex::Autolock lock(mMutex);
+ 
+     BufferQueue::BufferItem item;
++#if ANDROID_VERSION == 19
++    status_t err = acquireBufferLocked(&item, 0);
++#else
+     status_t err = acquireBufferLocked(&item);
++#endif
+     if (err == BufferQueue::NO_BUFFER_AVAILABLE) {
+         outBuffer = mCurrentBuffer;
+         return NO_ERROR;
+@@ -92,8 +118,13 @@ status_t FramebufferSurface::nextBuffer(sp<GraphicBuffer>& outBuffer, sp<Fence>&
+     if (mCurrentBufferSlot != BufferQueue::INVALID_BUFFER_SLOT &&
+         item.mBuf != mCurrentBufferSlot) {
+         // Release the previous buffer.
++#if ANDROID_VERSION == 19
++        err = releaseBufferLocked(mCurrentBufferSlot, mCurrentBuffer,
++                EGL_NO_DISPLAY, EGL_NO_SYNC_KHR);
++#else
+         err = releaseBufferLocked(mCurrentBufferSlot, EGL_NO_DISPLAY,
+                 EGL_NO_SYNC_KHR);
++#endif
+         if (err != NO_ERROR && err != BufferQueue::STALE_BUFFER_SLOT) {
+             ALOGE("error releasing buffer: %s (%d)", strerror(-err), err);
+             return err;
+@@ -136,7 +167,11 @@ status_t FramebufferSurface::setReleaseFenceFd(int fenceFd) {
+     if (fenceFd >= 0) {
+         sp<Fence> fence(new Fence(fenceFd));
+         if (mCurrentBufferSlot != BufferQueue::INVALID_BUFFER_SLOT) {
++#if ANDROID_VERSION == 19
++            status_t err = addReleaseFence(mCurrentBufferSlot, mCurrentBuffer,  fence);
++#else
+             status_t err = addReleaseFence(mCurrentBufferSlot, fence);
++#endif
+             ALOGE_IF(err, "setReleaseFenceFd: failed to add the fence: %s (%d)",
+                     strerror(-err), err);
+         }
+@@ -157,7 +192,10 @@ status_t FramebufferSurface::compositionComplete()
+ void FramebufferSurface::dump(String8& result) {
+     ConsumerBase::dump(result);
+ }
+-
++// Todo kitkat
++void FramebufferSurface::dump(String8& result, const char* prefix) {
++    ConsumerBase::dump(result);
++}
+ // ----------------------------------------------------------------------------
+ }; // namespace android
+ // ----------------------------------------------------------------------------
+diff --git a/widget/gonk/libdisplay/FramebufferSurface.h b/widget/gonk/libdisplay/FramebufferSurface.h
+index 38db795..3b5528f 100644
+--- a/widget/gonk/libdisplay/FramebufferSurface.h
++++ b/widget/gonk/libdisplay/FramebufferSurface.h
+@@ -34,13 +34,20 @@ class HWComposer;
+ 
+ class FramebufferSurface : public ConsumerBase {
+ public:
++// Todo kitkat
++#if ANDROID_VERSION == 19
++    FramebufferSurface(HWComposer& hwc, int disp, const sp<IGraphicBufferConsumer>& consumer);
++#else
+     FramebufferSurface(int disp, uint32_t width, uint32_t height, uint32_t format, sp<IGraphicBufferAlloc>& alloc);
++#endif
+ 
+     bool isUpdateOnDemand() const { return false; }
+     status_t setUpdateRectangle(const Rect& updateRect);
+     status_t compositionComplete();
+ 
+     virtual void dump(String8& result);
++    // Todo kitkat
++    virtual void dump(String8& result, const char* prefix);
+ 
+     // setReleaseFenceFd stores a fence file descriptor that will signal when the
+     // current buffer is no longer being read. This fence will be returned to
+diff --git a/widget/gonk/libdisplay/GonkDisplayJB.cpp b/widget/gonk/libdisplay/GonkDisplayJB.cpp
+index 7ab251a..e7a1588 100644
+--- a/widget/gonk/libdisplay/GonkDisplayJB.cpp
++++ b/widget/gonk/libdisplay/GonkDisplayJB.cpp
+@@ -114,12 +114,16 @@ GonkDisplayJB::GonkDisplayJB()
+         mBootAnimBuffer = mAlloc->createGraphicBuffer(mWidth, mHeight, surfaceformat, usage, &error);
+     }
+ 
+-    mFBSurface = new FramebufferSurface(0, mWidth, mHeight, surfaceformat, mAlloc);
++    // Todo kitkat
++    //mFBSurface = new FramebufferSurface(0, disp, consumer); //0, mWidth, mHeight, surfaceformat, mAlloc);
+ 
+ #if ANDROID_VERSION == 17
+     sp<SurfaceTextureClient> stc = new SurfaceTextureClient(static_cast<sp<ISurfaceTexture> >(mFBSurface->getBufferQueue()));
+ #else
+-    sp<Surface> stc = new Surface(static_cast<sp<IGraphicBufferProducer> >(mFBSurface->getBufferQueue()));
++    // Todo kitkat
++    //sp<Surface> stc = new Surface(static_cast<sp<IGraphicBufferProducer> >(mFBSurface->getBufferQueue()));
++    //sp<Surface> stc = new Surface();
++    sp<Surface> stc = NULL;
+ #endif
+     mSTClient = stc;
+ 
+diff --git a/widget/gonk/libdisplay/moz.build b/widget/gonk/libdisplay/moz.build
+index 60e0952..cece87e 100644
+--- a/widget/gonk/libdisplay/moz.build
++++ b/widget/gonk/libdisplay/moz.build
+@@ -18,7 +18,7 @@ SOURCES += [
+     'BootAnimation.cpp',
+ ]
+ 
+-if CONFIG['ANDROID_VERSION'] >= '18':
++if CONFIG['ANDROID_VERSION'] in ('18', '19'):
+     SOURCES += [
+         'FramebufferSurface.cpp',
+         'GonkDisplayJB.cpp',
+diff --git a/widget/gonk/libui/EventHub.cpp b/widget/gonk/libui/EventHub.cpp
+index 89581bc..4680d86 100644
+--- a/widget/gonk/libui/EventHub.cpp
++++ b/widget/gonk/libui/EventHub.cpp
+@@ -49,7 +49,8 @@
+ #include <sys/epoll.h>
+ #include <sys/ioctl.h>
+ #include <sys/limits.h>
+-#include <sha1.h>
++//#include <sha1.h>
++#include <sys/sha1.h>
+ 
+ /* this macro is used to tell if "bit" is set in "array"
+  * it selects a byte from the array, and does a boolean AND
+diff --git a/widget/gonk/libui/cutils_log.h b/widget/gonk/libui/cutils_log.h
+index 8b045c7..aa65c90 100644
+--- a/widget/gonk/libui/cutils_log.h
++++ b/widget/gonk/libui/cutils_log.h
+@@ -37,8 +37,14 @@
+ #endif
+ #include <stdarg.h>
+ 
++// Todo kitkat
++#if 1
++#include <log/uio.h>
++#include <log/logd.h>
++#else
+ #include <cutils/uio.h>
+ #include <cutils/logd.h>
++#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -460,6 +466,7 @@ extern "C" {
+  * Event logging.
+  */
+ 
++#if 0 // Todo kitkat
+ /*
+  * Event log entry types.  These must match up with the declarations in
+  * java/android/android/util/EventLog.java.
+@@ -471,6 +478,16 @@ typedef enum {
+     EVENT_TYPE_LIST     = 3,
+ } AndroidEventLogType;
+ 
++typedef enum {
++    LOG_ID_MAIN = 0,
++    LOG_ID_RADIO = 1,
++    LOG_ID_EVENTS = 2,
++    LOG_ID_SYSTEM = 3,
++
++    LOG_ID_MAX
++} log_id_t;
++
++#endif
+ 
+ #ifndef LOG_EVENT_INT
+ #define LOG_EVENT_INT(_tag, _value) {                                       \
+@@ -540,15 +557,6 @@ typedef enum {
+ #define android_logToFile(tag, file) (0)
+ #define android_logToFd(tag, fd) (0)
+ 
+-typedef enum {
+-    LOG_ID_MAIN = 0,
+-    LOG_ID_RADIO = 1,
+-    LOG_ID_EVENTS = 2,
+-    LOG_ID_SYSTEM = 3,
+-
+-    LOG_ID_MAX
+-} log_id_t;
+-
+ /*
+  * Send a simple string to the log.
+  */
+diff --git a/widget/gonk/nativewindow/FakeSurfaceComposer.cpp b/widget/gonk/nativewindow/FakeSurfaceComposer.cpp
+index fddd6b9..ef63681 100644
+--- a/widget/gonk/nativewindow/FakeSurfaceComposer.cpp
++++ b/widget/gonk/nativewindow/FakeSurfaceComposer.cpp
+@@ -59,6 +59,10 @@ sp<IBinder> FakeSurfaceComposer::createDisplay(const String8& displayName,
+     return nullptr;
+ }
+ 
++void FakeSurfaceComposer::destroyDisplay(const sp<IBinder>& display)
++{
++}
++
+ sp<IBinder> FakeSurfaceComposer::getBuiltInDisplay(int32_t id) {
+     return nullptr;
+ }
+@@ -91,6 +95,13 @@ status_t FakeSurfaceComposer::captureScreen(const sp<IBinder>& display,
+     return INVALID_OPERATION;
+ }
+ 
++status_t FakeSurfaceComposer::captureScreen(const sp<IBinder>& display, 
++    const sp<IGraphicBufferProducer>& producer,
++    uint32_t reqWidth, uint32_t reqHeight,
++    uint32_t minLayerZ, uint32_t maxLayerZ) {
++    return INVALID_OPERATION;
++}
++
+ void FakeSurfaceComposer::blank(const sp<IBinder>& display) {
+ }
+ 
+diff --git a/widget/gonk/nsAppShell.cpp b/widget/gonk/nsAppShell.cpp
+index 28569ad..2c12ef6 100644
+--- a/widget/gonk/nsAppShell.cpp
++++ b/widget/gonk/nsAppShell.cpp
+@@ -746,10 +746,11 @@ nsAppShell::Init()
+     if (XRE_GetProcessType() == GeckoProcessType_Default) {
+ #ifdef MOZ_OMX_DECODER
+         android::MediaResourceManagerService::instantiate();
+-#endif
++// Todo kitkat
+ #if ANDROID_VERSION >= 18
+         android::FakeSurfaceComposer::instantiate();
+ #endif
++#endif
+     }
+ 
+     nsCOMPtr<nsIObserverService> obsServ = GetObserverService();
+-- 
+1.7.9.5
+

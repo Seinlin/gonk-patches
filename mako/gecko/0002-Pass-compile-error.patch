@@ -1,0 +1,82 @@
+From c7c3565012ccb26e0336a5917a8441b6d349406c Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Thu, 5 Dec 2013 14:38:10 +0800
+Subject: [PATCH 2/8] Pass compile error
+
+---
+ b2g/app/Makefile.in               |    2 +-
+ configure.in                      |   18 ++++++++++++++++++
+ db/sqlite3/src/sqlite3.c          |    2 +-
+ other-licenses/android/res_data.c |    1 +
+ 4 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/b2g/app/Makefile.in b/b2g/app/Makefile.in
+index 3433a39..3427021 100644
+--- a/b2g/app/Makefile.in
++++ b/b2g/app/Makefile.in
+@@ -20,7 +20,7 @@ LIBS += \
+   $(DEPTH)/widget/gonk/libdisplay/$(LIB_PREFIX)display.$(LIB_SUFFIX) \
+   $(MOZ_ZLIB_LIBS) \
+   $(NULL)
+-ifeq ($(ANDROID_VERSION),$(findstring $(ANDROID_VERSION),17 18))
++ifeq ($(ANDROID_VERSION),$(findstring $(ANDROID_VERSION),17 18 19))
+ LIBS += \
+   -lgui \
+   -lsuspend \
+diff --git a/configure.in b/configure.in
+index 2a2b310..e2a1fe9 100644
+--- a/configure.in
++++ b/configure.in
+@@ -246,6 +246,24 @@ if test -n "$gonkdir" ; then
+         MOZ_OMX_DECODER=1
+         AC_SUBST(MOZ_OMX_DECODER)
+         ;;
++    19)
++        GONK_INCLUDES="-I$gonkdir/frameworks/native/include -I$gonkdir/frameworks/av/include -I$gonkdir/frameworks/av/include/media -I$gonkdir/frameworks/av/include/camera -I$gonkdir/frameworks/native/include/media/openmax -I$gonkdir/frameworks/av/media/libstagefright/include"
++
++#        if test -d "$gonkdir/external/bluetooth/bluez"; then
++#          GONK_INCLUDES="$GONK_INCLUDES -I$gonkdir/external/dbus -I$gonkdir/external/bluetooth/bluez/lib"
++#            MOZ_B2G_BT=1
++#            MOZ_B2G_BT_BLUEZ=1
++#        elif test -d "$gonkdir/external/bluetooth/bluedroid"; then
++#            MOZ_B2G_BT=1
++#            MOZ_B2G_BT_BLUEDROID=1
++#        fi
++
++#        MOZ_RTSP=1
++#        MOZ_NFC=1
++#        MOZ_B2G_CAMERA=1
++#        MOZ_OMX_DECODER=1
++#        AC_SUBST(MOZ_OMX_DECODER)
++        ;;
+     *)
+         AC_MSG_ERROR([Unsupported platform version: $ANDROID_VERSION])
+         ;;
+diff --git a/db/sqlite3/src/sqlite3.c b/db/sqlite3/src/sqlite3.c
+index 2d27e75..c6dfb9f 100644
+--- a/db/sqlite3/src/sqlite3.c
++++ b/db/sqlite3/src/sqlite3.c
+@@ -138442,7 +138442,7 @@ SQLITE_PRIVATE void sqlite3Fts3Snippet(
+       */
+       for(iRead=0; iRead<pTab->nColumn; iRead++){
+         SnippetFragment sF = {0, 0, 0, 0};
+-        int iS;
++        int iS=0; //Todo kitkat
+         if( iCol>=0 && iRead!=iCol ) continue;
+ 
+         /* Find the best snippet of nFToken tokens in column iRead. */
+diff --git a/other-licenses/android/res_data.c b/other-licenses/android/res_data.c
+index 63f731f..b2f081d 100644
+--- a/other-licenses/android/res_data.c
++++ b/other-licenses/android/res_data.c
+@@ -59,6 +59,7 @@ __RCSID("$NetBSD: res_data.c,v 1.8 2004/06/09 18:07:03 christos Exp $");
+ #include <unistd.h>
+ 
+ 
++__LIBC_HIDDEN__
+ const char * const _res_opcodes[] = {
+ 	"QUERY",
+ 	"IQUERY",
+-- 
+1.7.9.5
+

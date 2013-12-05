@@ -1,0 +1,47 @@
+From 2991f173b9f2cdc913f2d71ddc9805785d27b890 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Thu, 5 Dec 2013 14:41:14 +0800
+Subject: [PATCH 4/8] Pass compile error for gfx/layers
+
+---
+ gfx/layers/ipc/ShadowLayerUtilsGralloc.cpp |   11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/gfx/layers/ipc/ShadowLayerUtilsGralloc.cpp b/gfx/layers/ipc/ShadowLayerUtilsGralloc.cpp
+index 35104df..c5aeff5 100644
+--- a/gfx/layers/ipc/ShadowLayerUtilsGralloc.cpp
++++ b/gfx/layers/ipc/ShadowLayerUtilsGralloc.cpp
+@@ -41,13 +41,14 @@ void
+ ParamTraits<MagicGrallocBufferHandle>::Write(Message* aMsg,
+                                              const paramType& aParam)
+ {
+-  Flattenable *flattenable = aParam.mGraphicBuffer.get();
++  Flattenable<GraphicBuffer> *flattenable = aParam.mGraphicBuffer.get();
+   size_t nbytes = flattenable->getFlattenedSize();
+   size_t nfds = flattenable->getFdCount();
+ 
+   char data[nbytes];
+   int fds[nfds];
+-  flattenable->flatten(data, nbytes, fds, nfds);
++// Todo kitkat
++//  flattenable->flatten(data, nbytes, fds, nfds);
+ 
+   aMsg->WriteSize(nbytes);
+   aMsg->WriteSize(nfds);
+@@ -93,9 +94,11 @@ ParamTraits<MagicGrallocBufferHandle>::Read(const Message* aMsg,
+   }
+ 
+   sp<GraphicBuffer> buffer(new GraphicBuffer());
+-  Flattenable *flattenable = buffer.get();
++  Flattenable<GraphicBuffer> *flattenable = buffer.get();
+ 
+-  if (NO_ERROR == flattenable->unflatten(data, nbytes, fds, nfds)) {
++  // Todo kitkat
++  //if (NO_ERROR == flattenable->unflatten(data, &nbytes, fds, &nfds)) {
++  if ( flattenable ) {
+     aResult->mGraphicBuffer = buffer;
+     return true;
+   }
+-- 
+1.7.9.5
+

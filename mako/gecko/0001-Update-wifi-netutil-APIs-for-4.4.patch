@@ -1,0 +1,178 @@
+From 4ea70105d93302625ecc27dc4308c254a0624d4e Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 27 Nov 2013 15:39:21 +0800
+Subject: [PATCH 1/8] Update wifi/netutil APIs for 4.4
+
+---
+ dom/system/gonk/systemlibs.js |   33 +++++++++++++++++++++++++++++++--
+ dom/wifi/NetUtils.cpp         |    9 +++++++++
+ dom/wifi/WifiUtils.cpp        |   30 ++++++++++++++++++++++++++++--
+ dom/wifi/WifiUtils.h          |   12 ++++++------
+ 4 files changed, 74 insertions(+), 10 deletions(-)
+
+diff --git a/dom/system/gonk/systemlibs.js b/dom/system/gonk/systemlibs.js
+index 00e90ac..b5e70ac 100644
+--- a/dom/system/gonk/systemlibs.js
++++ b/dom/system/gonk/systemlibs.js
+@@ -208,8 +208,37 @@ this.libnetutils = (function () {
+     let c_dhcp_do_request;
+     let c_dhcp_do_request_renew;
+ 
+-    // also changed for 16 and 18
+-    if (sdkVersion >= 18) { // 18 == JB 4.3
++    // also changed for 16, 18 and 19
++    if (sdkVersion >= 19) { // 19 == KK 4.4
++      dnslistbuf[0] = dns1buf;
++      dnslistbuf[1] = dns2buf;
++      c_dhcp_do_request =
++        library.declare("dhcp_do_request", ctypes.default_abi,
++                        ctypes.int,       // return value
++                        ctypes.char.ptr,  // ifname
++                        ctypes.char.ptr,  // ipaddr
++                        ctypes.char.ptr,  // gateway
++                        ctypes.int.ptr,   // prefixlen
++                        ctypes.char.ptr.array(), // dns
++                        ctypes.char.ptr,  // server
++                        ctypes.int.ptr,   // lease
++                        ctypes.char.ptr,  // vendorinfo
++                        ctypes.char.ptr,  // domain
++                        ctypes.char.ptr); // mtu
++      c_dhcp_do_request_renew =
++        library.declare("dhcp_do_request_renew", ctypes.default_abi,
++                        ctypes.int,       // return value
++                        ctypes.char.ptr,  // ifname
++                        ctypes.char.ptr,  // ipaddr
++                        ctypes.char.ptr,  // gateway
++                        ctypes.int.ptr,   // prefixlen
++                        ctypes.char.ptr.array(),  // dns
++                        ctypes.char.ptr,  // server
++                        ctypes.int.ptr,   // lease
++                        ctypes.char.ptr,  // vendorinfo
++                        ctypes.char.ptr,  // domain
++                        ctypes.char.ptr); // mtu
++    } else if (sdkVersion >= 18) { // 18 == JB 4.3
+       dnslistbuf[0] = dns1buf;
+       dnslistbuf[1] = dns2buf;
+       c_dhcp_do_request =
+diff --git a/dom/wifi/NetUtils.cpp b/dom/wifi/NetUtils.cpp
+index 12ced65..c8cac12 100644
+--- a/dom/wifi/NetUtils.cpp
++++ b/dom/wifi/NetUtils.cpp
+@@ -132,6 +132,15 @@ int32_t NetUtils::do_dhcp_do_request(const char *ifname,
+     char domains[PROPERTY_VALUE_MAX];
+     ret = dhcp_do_request(ifname, ipaddr, gateway, prefixLength, dns,
+                           server, lease, vendorinfo, domains);
++  } else if (sdkVersion == 19) {
++    // JB 4.4
++    DEFINE_DLFUNC(dhcp_do_request, int32_t, const char*, char*, char*,  uint32_t*, char**, char*, uint32_t*, char*, char*, char*)
++    USE_DLFUNC(dhcp_do_request)
++    char *dns[3] = {dns1, dns2, nullptr};
++    char domains[PROPERTY_VALUE_MAX];
++    char mtu[PROPERTY_VALUE_MAX];
++    ret = dhcp_do_request(ifname, ipaddr, gateway, prefixLength, dns,
++                          server, lease, vendorinfo, domains, mtu);
+   } else {
+     NS_WARNING("Unable to perform do_dhcp_request: unsupported sdk version!");
+   }
+diff --git a/dom/wifi/WifiUtils.cpp b/dom/wifi/WifiUtils.cpp
+index 283aecb..d4a457d 100644
+--- a/dom/wifi/WifiUtils.cpp
++++ b/dom/wifi/WifiUtils.cpp
+@@ -197,6 +197,12 @@ public:
+     return wifi_start_supplicant(arg);
+   }
+ 
++  DEFINE_DLFUNC(wifi_stop_supplicant, int32_t, int32_t)
++  int32_t do_wifi_stop_supplicant(int32_t arg) {
++    USE_DLFUNC(wifi_stop_supplicant)
++    return wifi_stop_supplicant(arg);
++  }
++
+   DEFINE_DLFUNC(wifi_connect_to_supplicant, int32_t, const char*)
+   int32_t do_wifi_connect_to_supplicant(const char* iface) {
+     USE_DLFUNC(wifi_connect_to_supplicant)
+@@ -210,13 +216,33 @@ public:
+   }
+ };
+ 
++// KK implementation.
++// We only redefine the methods that have a different signature than on ICS.
++class KKWpaSupplicantImpl : public ICSWpaSupplicantImpl
++{
++public:
++  DEFINE_DLFUNC(wifi_start_supplicant, int32_t, int32_t)
++  int32_t do_wifi_start_supplicant(int32_t arg) {
++    USE_DLFUNC(wifi_start_supplicant)
++    return wifi_start_supplicant(arg);
++  }
++
++  DEFINE_DLFUNC(wifi_stop_supplicant, int32_t, int32_t)
++  int32_t do_wifi_stop_supplicant(int32_t arg) {
++    USE_DLFUNC(wifi_stop_supplicant)
++    return wifi_stop_supplicant(arg);
++  }
++};
++
+ // Concrete class to use to access the wpa supplicant.
+ WpaSupplicant::WpaSupplicant()
+ {
+   if (NetUtils::SdkVersion() < 16) {
+     mImpl = new ICSWpaSupplicantImpl();
+-  } else {
++  } else if (NetUtils::SdkVersion() < 19) {
+     mImpl = new JBWpaSupplicantImpl();
++  } else {
++    mImpl = new KKWpaSupplicantImpl();
+   }
+   mNetUtils = new NetUtils();
+ };
+@@ -278,7 +304,7 @@ bool WpaSupplicant::ExecuteCommand(CommandOptions aOptions,
+   } else if (aOptions.mCmd.EqualsLiteral("start_supplicant")) {
+     aResult.mStatus = mImpl->do_wifi_start_supplicant(0);
+   } else if (aOptions.mCmd.EqualsLiteral("stop_supplicant")) {
+-    aResult.mStatus = mImpl->do_wifi_stop_supplicant();
++    aResult.mStatus = mImpl->do_wifi_stop_supplicant(0);
+   } else if (aOptions.mCmd.EqualsLiteral("connect_to_supplicant")) {
+     aResult.mStatus = mImpl->do_wifi_connect_to_supplicant(aInterface.get());
+   } else if (aOptions.mCmd.EqualsLiteral("ifc_enable")) {
+diff --git a/dom/wifi/WifiUtils.h b/dom/wifi/WifiUtils.h
+index 6a82cef..0556b2c 100644
+--- a/dom/wifi/WifiUtils.h
++++ b/dom/wifi/WifiUtils.h
+@@ -90,10 +90,10 @@ public:
+   virtual ~WpaSupplicantImpl() {}
+ 
+   virtual int32_t
+-  do_wifi_wait_for_event(const char *iface, char *buf, size_t len) = 0; // ICS != JB
++  do_wifi_wait_for_event(const char *iface, char *buf, size_t len) = 0; // KK == ICS != JB
+ 
+   virtual int32_t
+-  do_wifi_command(const char* iface, const char* cmd, char* buff, size_t* len) = 0; // ICS != JB
++  do_wifi_command(const char* iface, const char* cmd, char* buff, size_t* len) = 0; // KK == ICS != JB
+ 
+   virtual int32_t
+   do_wifi_load_driver() = 0;
+@@ -102,16 +102,16 @@ public:
+   do_wifi_unload_driver() = 0;
+ 
+   virtual int32_t
+-  do_wifi_start_supplicant(int32_t) = 0; // ICS != JB
++  do_wifi_start_supplicant(int32_t) = 0; // ICS != JB == KK
+ 
+   virtual int32_t
+-  do_wifi_stop_supplicant() = 0;
++  do_wifi_stop_supplicant(int32_t) = 0; //ICS != JB == KK
+ 
+   virtual int32_t
+-  do_wifi_connect_to_supplicant(const char* iface) = 0; // ICS != JB
++  do_wifi_connect_to_supplicant(const char* iface) = 0; // KK == ICS != JB 
+ 
+   virtual void
+-  do_wifi_close_supplicant_connection(const char* iface) = 0; // ICS != JB
++  do_wifi_close_supplicant_connection(const char* iface) = 0; // KK == ICS != JB 
+ };
+ 
+ // Concrete class to use to access the wpa supplicant.
+-- 
+1.7.9.5
+

@@ -1,0 +1,25 @@
+From 1c666ff40464bcf3320e093d120737d8e1010b49 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Thu, 5 Dec 2013 16:03:57 +0800
+Subject: [PATCH] Pass compile error
+
+---
+ dist/Android.mk |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dist/Android.mk b/dist/Android.mk
+index 3e39229..5464923 100644
+--- a/dist/Android.mk
++++ b/dist/Android.mk
+@@ -66,7 +66,7 @@ ifeq ($(WITH_HOST_DALVIK),true)
+     LOCAL_LDLIBS += -lpthread -ldl
+     LOCAL_CFLAGS += $(common_sqlite_flags)
+     LOCAL_MODULE:= libsqlite
+-    LOCAL_SHARED_LIBRARIES += libicuuc-host libicui18n-host
++    LOCAL_SHARED_LIBRARIES += libicuuc libicui18n
+     LOCAL_STATIC_LIBRARIES := liblog libutils libcutils
+ 
+     # include android specific methods
+-- 
+1.7.9.5
+
