@@ -268,23 +268,6 @@ index fddd6b9..ef63681 100644
  void FakeSurfaceComposer::blank(const sp<IBinder>& display) {
  }
  
-diff --git a/widget/gonk/nsAppShell.cpp b/widget/gonk/nsAppShell.cpp
-index 28569ad..2c12ef6 100644
---- a/widget/gonk/nsAppShell.cpp
-+++ b/widget/gonk/nsAppShell.cpp
-@@ -746,10 +746,11 @@ nsAppShell::Init()
-     if (XRE_GetProcessType() == GeckoProcessType_Default) {
- #ifdef MOZ_OMX_DECODER
-         android::MediaResourceManagerService::instantiate();
--#endif
-+// Todo kitkat
- #if ANDROID_VERSION >= 18
-         android::FakeSurfaceComposer::instantiate();
- #endif
-+#endif
-     }
- 
-     nsCOMPtr<nsIObserverService> obsServ = GetObserverService();
 -- 
 1.7.9.5
 
