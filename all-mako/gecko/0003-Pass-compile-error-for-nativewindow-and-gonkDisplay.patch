@@ -11,8 +11,7 @@ Subject: [PATCH 3/8] Pass compile error for nativewindow and gonkDisplay
  widget/gonk/libui/EventHub.cpp                   |    3 +-
  widget/gonk/libui/cutils_log.h                   |   26 +++++++++-----
  widget/gonk/nativewindow/FakeSurfaceComposer.cpp |   11 ++++++
- widget/gonk/nsAppShell.cpp                       |    3 +-
- 8 files changed, 86 insertions(+), 16 deletions(-)
+ 7 files changed, 83 insertions(+), 16 deletions(-)
 
 diff --git a/widget/gonk/libdisplay/FramebufferSurface.cpp b/widget/gonk/libdisplay/FramebufferSurface.cpp
 index 99dbfbb..a35fcfe 100644
