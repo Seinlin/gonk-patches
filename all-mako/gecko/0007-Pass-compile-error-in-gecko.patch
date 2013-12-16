@@ -4,30 +4,11 @@ Date: Thu, 5 Dec 2013 14:43:29 +0800
 Subject: [PATCH 7/8] Pass compile error in gecko
 
 ---
- js/src/shell/js.cpp                |    2 +
  memory/build/malloc_decls.h        |    2 +-
  memory/mozjemalloc/jemalloc.c      |    2 +-
  other-licenses/android/res_state.c |  106 ++++++++++++++++++++++++------------
- 4 files changed, 76 insertions(+), 36 deletions(-)
+ 3 files changed, 74 insertions(+), 36 deletions(-)
 
-diff --git a/js/src/shell/js.cpp b/js/src/shell/js.cpp
-index c3abf95..8f4c82c 100644
---- a/js/src/shell/js.cpp
-+++ b/js/src/shell/js.cpp
-@@ -3581,11 +3581,13 @@ EscapeForShell(AutoCStringVector &argv)
- 
- Vector<const char*, 4, js::SystemAllocPolicy> sPropagatedFlags;
- 
-+#if (defined(JS_CPU_X86) || defined(JS_CPU_X64)) && defined(JS_ION)
- static bool
- PropagateFlagToNestedShells(const char *flag)
- {
-     return sPropagatedFlags.append(flag);
- }
-+#endif
- 
- static bool
- NestedShell(JSContext *cx, unsigned argc, jsval *vp)
 diff --git a/memory/build/malloc_decls.h b/memory/build/malloc_decls.h
 index ea73fa9..234ac5c 100644
 --- a/memory/build/malloc_decls.h
