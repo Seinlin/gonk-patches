@@ -1,0 +1,510 @@
+diff --git a/dom/camera/CameraControlImpl.cpp b/dom/camera/CameraControlImpl.cpp
+--- a/dom/camera/CameraControlImpl.cpp
++++ b/dom/camera/CameraControlImpl.cpp
+@@ -235,17 +235,17 @@ CameraControlImpl::OnError(CameraControl
+   RwLockAutoEnterRead lock(mListenerLock);
+ 
+ #ifdef PR_LOGGING
+   const char* error[] = {
+     "api-failed",
+     "init-failed",
+     "invalid-configuration",
+     "service-failed",
+-    "set-picture-size-failred",
++    "set-picture-size-failed",
+     "set-thumbnail-size-failed",
+     "unknown"
+   };
+   const char* context[] = {
+     "StartCamera",
+     "StopCamera",
+     "AutoFocus",
+     "TakePicture",
+diff --git a/dom/camera/DOMCameraControl.cpp b/dom/camera/DOMCameraControl.cpp
+--- a/dom/camera/DOMCameraControl.cpp
++++ b/dom/camera/DOMCameraControl.cpp
+@@ -119,17 +119,17 @@ StartRecordingHelper::HandleEvent(nsIDOM
+ {
+   nsString eventType;
+   aEvent->GetType(eventType);
+ 
+   mDOMCameraControl->OnCreatedFileDescriptor(eventType.EqualsLiteral("success"));
+   return NS_OK;
+ }
+ 
+-NS_IMPL_ISUPPORTS0(mozilla::StartRecordingHelper)
++NS_IMPL_ISUPPORTS1(mozilla::StartRecordingHelper, nsIDOMEventListener)
+ 
+ nsDOMCameraControl::DOMCameraConfiguration::DOMCameraConfiguration()
+   : CameraConfiguration()
+   , mMaxFocusAreas(0)
+   , mMaxMeteringAreas(0)
+ {
+   MOZ_COUNT_CTOR(nsDOMCameraControl::DOMCameraConfiguration);
+ }
+@@ -616,17 +616,17 @@ nsDOMCameraControl::GetExposureCompensat
+   return compensation;
+ }
+ 
+ int32_t
+ nsDOMCameraControl::SensorAngle()
+ {
+   MOZ_ASSERT(mCameraControl);
+ 
+-  int32_t angle;
++  int32_t angle = 0;
+   mCameraControl->Get(CAMERA_PARAM_SENSORANGLE, angle);
+   return angle;
+ }
+ 
+ already_AddRefed<CameraShutterCallback>
+ nsDOMCameraControl::GetOnShutter()
+ {
+   nsCOMPtr<CameraShutterCallback> cb = mOnShutterCb;
+@@ -1155,16 +1155,18 @@ nsDOMCameraControl::OnTakePictureComplet
+   nsCOMPtr<CameraTakePictureCallback> cb = mTakePictureOnSuccessCb.forget();
+   mTakePictureOnErrorCb = nullptr;
+   cb->Call(aPicture, ignored);
+ }
+ 
+ void
+ nsDOMCameraControl::OnError(CameraControlListener::CameraErrorContext aContext, const nsAString& aError)
+ {
++  DOM_CAMERA_LOGI("DOM OnError context=%d, error='%s'\n", aContext,
++    NS_LossyConvertUTF16toASCII(aError).get());
+   MOZ_ASSERT(NS_IsMainThread());
+ 
+   nsCOMPtr<CameraErrorCallback>* errorCb;
+   switch (aContext) {
+     case CameraControlListener::kInStartCamera:
+       mGetCameraOnSuccessCb = nullptr;
+       errorCb = &mGetCameraOnErrorCb;
+       break;
+@@ -1190,42 +1192,54 @@ nsDOMCameraControl::OnError(CameraContro
+       break;
+ 
+     case CameraControlListener::kInStartRecording:
+       mStartRecordingOnSuccessCb = nullptr;
+       errorCb = &mStartRecordingOnErrorCb;
+       break;
+ 
+     case CameraControlListener::kInStopRecording:
+-      NS_WARNING("Failed to stop recording (which shouldn't happen)!");
+-      MOZ_CRASH();
+-      break;
++      // This method doesn't have any callbacks, so all we can do is log the
++      // failure. This only happens after the hardware has been released.
++      NS_WARNING("Failed to stop recording");
++      return;
+ 
+     case CameraControlListener::kInStartPreview:
+-      NS_WARNING("Failed to (re)start preview!");
+-      MOZ_CRASH();
+-      break;
++      // This method doesn't have any callbacks, so all we can do is log the
++      // failure. This only happens after the hardware has been released.
++      NS_WARNING("Failed to (re)start preview");
++      return;
+ 
+     case CameraControlListener::kInUnspecified:
+       if (aError.EqualsASCII("ErrorServiceFailed")) {
+         // If the camera service fails, we will get preview-stopped and
+-        //  hardware-closed events, so nothing to do here.
++        // hardware-closed events, so nothing to do here.
++        NS_WARNING("Camera service failed");
++        return;
++      }
++      if (aError.EqualsASCII("ErrorSetPictureSizeFailed") ||
++          aError.EqualsASCII("ErrorSetThumbnailSizeFailed")) {
++        // We currently don't handle attribute setter failure. Practically,
++        // this only ever happens if a setter is called after the hardware
++        // has gone away before an asynchronous set gets to happen, so we
++        // swallow these.
++        NS_WARNING("Failed to set either picture or thumbnail size");
+         return;
+       }
+       // fallthrough
+ 
+     default:
+       MOZ_ASSUME_UNREACHABLE("Error occurred in unanticipated camera state");
+       return;
+   }
+ 
+   MOZ_ASSERT(errorCb);
+ 
+   if (!*errorCb) {
+-    DOM_CAMERA_LOGW("DOM No error handler for error '%s' at %d\n",
++    DOM_CAMERA_LOGW("DOM No error handler for error '%s' in context=%d\n",
+       NS_LossyConvertUTF16toASCII(aError).get(), aContext);
+     return;
+   }
+ 
+   // kung-fu death grip
+   nsCOMPtr<CameraErrorCallback> cb = (*errorCb).forget();
+   ErrorResult ignored;
+   cb->Call(aError, ignored);
+diff --git a/dom/camera/DOMCameraControlListener.cpp b/dom/camera/DOMCameraControlListener.cpp
+--- a/dom/camera/DOMCameraControlListener.cpp
++++ b/dom/camera/DOMCameraControlListener.cpp
+@@ -323,16 +323,24 @@ DOMCameraControlListener::OnError(Camera
+     {
+       nsString error;
+ 
+       switch (mError) {
+         case kErrorServiceFailed:
+           error = NS_LITERAL_STRING("ErrorServiceFailed");
+           break;
+ 
++        case kErrorSetPictureSizeFailed:
++          error = NS_LITERAL_STRING("ErrorSetPictureSizeFailed");
++          break;
++
++        case kErrorSetThumbnailSizeFailed:
++          error = NS_LITERAL_STRING("ErrorSetThumbnailSizeFailed");
++          break;
++
+         case kErrorApiFailed:
+           // XXXmikeh legacy error placeholder
+           error = NS_LITERAL_STRING("FAILURE");
+           break;
+ 
+         default:
+           error = NS_LITERAL_STRING("ErrorUnknown");
+           break;
+diff --git a/dom/camera/GonkCameraControl.cpp b/dom/camera/GonkCameraControl.cpp
+--- a/dom/camera/GonkCameraControl.cpp
++++ b/dom/camera/GonkCameraControl.cpp
+@@ -450,28 +450,27 @@ nsGonkCameraControl::Get(uint32_t aKey, 
+   return mParams.Get(aKey, aSize);
+ }
+ 
+ // Signed int parameter accessors.
+ nsresult
+ nsGonkCameraControl::Set(uint32_t aKey, int aValue)
+ {
+   if (aKey == CAMERA_PARAM_PICTURE_ROTATION) {
++    RETURN_IF_NO_CAMERA_HW();
+     aValue = RationalizeRotation(aValue + mCameraHw->GetSensorOrientation());
+   }
+   return SetAndPush(aKey, aValue);
+ }
+ 
+ nsresult
+ nsGonkCameraControl::Get(uint32_t aKey, int& aRet)
+ {
+   if (aKey == CAMERA_PARAM_SENSORANGLE) {
+-    if (!mCameraHw.get()) {
+-      return NS_ERROR_NOT_AVAILABLE;
+-    }
++    RETURN_IF_NO_CAMERA_HW();
+     aRet = mCameraHw->GetSensorOrientation();
+     return NS_OK;
+   }
+ 
+   return mParams.Get(aKey, aRet);
+ }
+ 
+ // GPS location parameter accessors.
+@@ -598,17 +597,17 @@ nsGonkCameraControl::SetThumbnailSizeImp
+ 
+   if (smallestDeltaIndex == UINT32_MAX) {
+     DOM_CAMERA_LOGW("Unable to find a thumbnail size close to %ux%u\n",
+       aSize.width, aSize.height);
+     return NS_ERROR_INVALID_ARG;
+   }
+ 
+   Size size = supportedSizes[smallestDeltaIndex];
+-  DOM_CAMERA_LOGI("camera-param set picture-size = %ux%u (requested %ux%u)\n",
++  DOM_CAMERA_LOGI("camera-param set thumbnail-size = %ux%u (requested %ux%u)\n",
+     size.width, size.height, aSize.width, aSize.height);
+   if (size.width > INT32_MAX || size.height > INT32_MAX) {
+     DOM_CAMERA_LOGE("Supported thumbnail size is too big, no change\n");
+     return NS_ERROR_FAILURE;
+   }
+ 
+   return SetAndPush(CAMERA_PARAM_THUMBNAILSIZE, size);
+ }
+@@ -1032,37 +1031,23 @@ nsGonkCameraControl::SetPreviewSize(cons
+       delta = abs((long int)(size.width - aSize.width));
+       if (delta < minSizeDelta) {
+         minSizeDelta = delta;
+         best = size;
+       }
+     }
+   }
+ 
+-  {
+-    ICameraControlParameterSetAutoEnter set(this);
+-
+-    // Some camera drivers will ignore our preview size if it's larger
+-    // that the currently set video recording size, so we need to set
+-    // both here just in case.
+-    rv = SetAndPush(CAMERA_PARAM_PREVIEWSIZE, best);
+-    if (NS_FAILED(rv)) {
+-      DOM_CAMERA_LOGE("Failed to set picture mode preview size (0x%x)\n", rv);
+-      return rv;
+-    }
+-
+-    rv = SetAndPush(CAMERA_PARAM_VIDEOSIZE, best);
+-    if (NS_FAILED(rv)) {
+-      DOM_CAMERA_LOGE("Failed to bump up picture mode video size (0x%x)\n", rv);
+-      return rv;
+-    }
+-  }
+-
++  // Some camera drivers will ignore our preview size if it's larger
++  // that the currently set video recording size, so we need to set
++  // both here just in case.
++  mParams.Set(CAMERA_PARAM_PREVIEWSIZE, best);
++  mParams.Set(CAMERA_PARAM_VIDEOSIZE, best);
+   mCurrentConfiguration.mPreviewSize = best;
+-  return NS_OK;
++  return PushParameters();
+ }
+ 
+ nsresult
+ nsGonkCameraControl::SetupVideoMode(const nsAString& aProfile)
+ {
+   DOM_CAMERA_LOGT("%s:%d\n", __func__, __LINE__);
+ 
+   // read preferences for camcorder
+diff --git a/dom/camera/test/mochitest.ini b/dom/camera/test/mochitest.ini
+--- a/dom/camera/test/mochitest.ini
++++ b/dom/camera/test/mochitest.ini
+@@ -1,8 +1,9 @@
+ [DEFAULT]
+ support-files = camera_common.js
+ 
+ [test_camera.html]
+ [test_camera_2.html]
+ [test_camera_3.html]
+ [test_camera_hardware_init_failure.html]
+ [test_camera_hardware_failures.html]
++[test_bug975472.html]
+diff --git a/dom/camera/test/test_bug975472.html b/dom/camera/test/test_bug975472.html
+new file mode 100644
+--- /dev/null
++++ b/dom/camera/test/test_bug975472.html
+@@ -0,0 +1,222 @@
++<!DOCTYPE HTML>
++<html>
++<head>
++  <title>Test for bug 975472</title>
++  <script type="text/javascript" src="/MochiKit/MochiKit.js"></script>
++  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
++  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
++</head>
++<body>
++<video id="viewfinder" width="200" height="200" autoplay></video>
++<img src="#" alt="This image is going to load" id="testimage"/>
++<script class="testbody" type="text/javascript;version=1.7">
++
++var whichCamera = navigator.mozCameras.getListOfCameras()[0];
++var config = {
++  mode: 'picture',
++  recorderProfile: 'cif',
++  previewSize: {
++    width: 352,
++    height: 288
++  }
++};
++var options = {
++  rotation: 0,
++  position: {
++    latitude: 43.645687,
++    longitude: -79.393661
++  },
++  dateTime: Date.now()
++};
++
++function onError(e) {
++  ok(false, "Error" + JSON.stringify(e));
++}
++function next() {
++  Camera.nextTest();
++}
++
++// The array of tests
++var tests = [
++  {
++    key: "release-after-release",
++    func: function testAutoFocus(camera) {
++      function onSuccess(success) {
++        ok(true, "release() succeeded");
++        next();
++      }
++      function onError(error) {
++        ok(false, "release() failed with: " + error);
++      }
++      camera.release(onSuccess, onError);
++    }
++  },
++  {
++    key: "set-picture-size-after-release",
++    func: function testSetPictureSize(camera) {
++      camera.pictureSize = { width: 0, height: 0 };
++      next();
++    }
++  },
++  {
++    key: "set-thumbnail-size-after-release",
++    func: function testSetThumbnailSize(camera) {
++      camera.thumbnailSize = { width: 0, height: 0 };
++      next();
++    }
++  },
++  {
++    key: "get-sensor-angle-after-release",
++    func: function testGetSensorAngle(camera) {
++      ok(camera.sensorAngle == 0, "camera.sensorAngle = " + camera.sensorAngle);
++      next();
++    }
++  },
++  {
++    key: "resume-preview-after-release",
++    func: function testResumePreview(camera) {
++      camera.resumePreview();
++      next();
++    }
++  },
++  {
++    key: "auto-focus-after-release",
++    func: function testAutoFocus(camera) {
++      function onSuccess(success) {
++        ok(false, "autoFocus() succeeded incorrectly");
++      }
++      function onError(error) {
++        ok(true, "autoFocus() failed correctly with: " + error);
++        next();
++      }
++      camera.autoFocus(onSuccess, onError);
++    }
++  },
++  {
++    key: "take-picture-after-release",
++    func: function testTakePicture(camera) {
++      function onSuccess(picture) {
++        ok(false, "takePicture() succeeded incorrectly");
++      }
++      function onError(error) {
++        ok(true, "takePicture() failed correctly with: " + error);
++        next();
++      }
++      camera.takePicture(null, onSuccess, onError);
++    }
++  },
++  {
++    key: "start-recording-after-release",
++    func: function testStartRecording(camera) {
++      function onSuccess(picture) {
++        ok(false, "startRecording() process succeeded incorrectly");
++      }
++      function onError(error) {
++        ok(true, "startRecording() process failed correctly with: " + error);
++        next();
++      }
++      var recordingOptions = {
++        profile: 'cif',
++        rotation: 0
++      };
++      camera.startRecording(recordingOptions,
++                            navigator.getDeviceStorage('videos'),
++                            'bug975472.mp4',
++                            onSuccess, onError);
++    }
++  },
++  {
++    key: "stop-recording-after-release",
++    func: function testStopRecording(camera) {
++      camera.stopRecording();
++      next();
++    }
++  },
++  {
++    key: "set-configuration-after-release",
++    func: function testSetConfiguration(camera) {
++      function onSuccess(picture) {
++        ok(false, "setConfiguration() process succeeded incorrectly");
++      }
++      function onError(error) {
++        ok(true, "setConfiguration() process failed correctly with: " + error);
++        next();
++      }
++      camera.setConfiguration(config, onSuccess, onError);
++    }
++  },
++];
++
++var testGenerator = function() {
++  for (var i = 0; i < tests.length; ++i ) {
++    yield tests[i];
++  }
++}();
++
++var Camera = {
++  cameraObj: null,
++  _otherPictureSize: null,
++  get viewfinder() {
++    return document.getElementById('viewfinder');
++  },
++  onCameraReady: function () {
++    Camera.nextTest = function() {
++      try {
++        var t = testGenerator.next();
++        info("test: " + t.key);
++        t.func(Camera.cameraObj);
++      } catch(e) {
++        if (e instanceof StopIteration) {
++          SimpleTest.finish();
++        } else {
++          throw e;
++        }
++      }
++    };
++    // Release the camera hardware, and call all of the asynchronous methods
++    // to make sure they properly handle being in this state.
++    Camera.cameraObj.release();
++    next();
++  },
++  release: function release() {
++    cameraObj = null;
++  },
++  start: function run_test() {
++    function onSuccess(camera, config) {
++      Camera.cameraObj = camera;
++      Camera.viewfinder.mozSrcObject = camera;
++      Camera.viewfinder.play();
++      ok(camera.capabilities.pictureSizes.length > 0,
++        "capabilities.pictureSizes.length = " +
++        camera.capabilities.pictureSizes.length);
++      Camera._otherPictureSize = camera.capabilities.pictureSizes.slice(-1)[0];
++      camera.pictureSize = camera.capabilities.pictureSizes[0];
++      options.pictureSize = Camera._otherPictureSize;
++      options.fileFormat = camera.capabilities.fileFormats[0];
++      info("getCamera callback, setting pictureSize = " + options.pictureSize.toSource());
++      Camera.cameraObj.onPreviewStateChange = function(state) {
++        if (state === 'started') {
++          info("viewfinder is ready and playing");
++          Camera.cameraObj.onPreviewStateChange = null;
++          Camera.onCameraReady();
++        }
++      };
++    };
++    navigator.mozCameras.getCamera(whichCamera, config, onSuccess, onError);
++  }
++}
++
++SimpleTest.waitForExplicitFinish();
++
++window.addEventListener('beforeunload', function() {
++  Camera.viewfinder.mozSrcObject = null;
++  Camera.cameraObj.release();
++  Camera.cameraObj = null;
++});
++
++Camera.start();
++
++</script>
++</body>
++
++</html>
