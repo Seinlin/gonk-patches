@@ -1,0 +1,67 @@
+# HG changeset patch
+# User Fabrice Desré <fabrice@mozilla.com>
+# Parent a90128197c5a70af75a0ab358368729634d6ae20
+Bug 944659 - Considerable amounts of script-sources
+
+diff --git a/js/src/jsscript.cpp b/js/src/jsscript.cpp
+--- a/js/src/jsscript.cpp
++++ b/js/src/jsscript.cpp
+@@ -1186,17 +1186,17 @@ ScriptSource::setSourceCopy(ExclusiveCon
+     // are at least 2 worker threads:
+     //  - If we are on a worker thread, there must be another worker thread to
+     //    execute our compression task.
+     //  - If we are on the main thread, there must be at least two worker
+     //    threads since at most one worker thread can be blocking on the main
+     //    thread (see WorkerThreadState::canStartParseTask) which would cause a
+     //    deadlock if there wasn't a second worker thread that could make
+     //    progress on our compression task.
+-    if (task && cx->cpuCount() > 1 && cx->workerThreadCount() >= 2) {
++    if (task && cx->workerThreadCount() >= 2) {
+         task->ss = this;
+         task->chars = src;
+         ready_ = false;
+         if (!StartOffThreadCompression(cx, task))
+             return false;
+     } else {
+         if (!adjustDataSize(sizeof(jschar) * length))
+             return false;
+diff --git a/js/src/jsworkers.cpp b/js/src/jsworkers.cpp
+--- a/js/src/jsworkers.cpp
++++ b/js/src/jsworkers.cpp
+@@ -850,28 +850,36 @@ WorkerThread::handleParseWorkload(Worker
+ 
+ void
+ WorkerThread::handleCompressionWorkload(WorkerThreadState &state)
+ {
+     JS_ASSERT(state.isLocked());
+     JS_ASSERT(state.canStartCompressionTask());
+     JS_ASSERT(idle());
+ 
++    // Set to a low priority on single core CPUs.
++    if (js::GetCPUCount() == 1) {
++        PR_SetThreadPriority(thread, PR_PRIORITY_LOW);
++    }
++
+     compressionTask = state.compressionWorklist.popCopy();
+     compressionTask->workerThread = this;
+ 
+     {
+         AutoUnlockWorkerThreadState unlock(runtime);
+         if (!compressionTask->compress())
+             compressionTask->setOOM();
+     }
+ 
+     compressionTask->workerThread = nullptr;
+     compressionTask = nullptr;
+ 
++    // Restore thread normal priority.
++    PR_SetThreadPriority(thread, PR_PRIORITY_NORMAL);
++
+     // Notify the main thread in case it is waiting for the compression to finish.
+     state.notifyAll(WorkerThreadState::CONSUMER);
+ }
+ 
+ bool
+ js::StartOffThreadCompression(ExclusiveContext *cx, SourceCompressionTask *task)
+ {
+     if (!EnsureWorkerThreadsInitialized(cx))
