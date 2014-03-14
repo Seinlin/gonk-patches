@@ -1,0 +1,45 @@
+From 8950d76d550caa333819a1b68c474607e921077d Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Thu, 13 Mar 2014 17:32:27 +0800
+Subject: [PATCH] B2G Adaptations
+
+---
+ scx15/device.mk  |    6 +++++-
+ scx15/volume.cfg |    1 +
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+ create mode 100644 scx15/volume.cfg
+
+diff --git a/scx15/device.mk b/scx15/device.mk
+index dde492b..f43ad42 100644
+--- a/scx15/device.mk
++++ b/scx15/device.mk
+@@ -81,7 +81,7 @@ PRODUCT_COPY_FILES += \
+ 	$(PLATDIR)/sci-keypad.kl:system/usr/keylayout/sci-keypad.kl \
+ 	$(PLATDIR)/media_codecs.xml:system/etc/media_codecs.xml \
+ 	$(PLATDIR)/media_profiles.xml:system/etc/media_profiles.xml \
+-        vendor/sprd/open-source/res/spn/spn-conf.xml:system/etc/spn-conf.xml \
++  vendor/sprd/open-source/res/spn/spn-conf.xml:system/etc/spn-conf.xml \
+ 	vendor/sprd/open-source/res/apn/apns-conf.xml:system/etc/apns-conf.xml \
+ 	vendor/sprd/open-source/res/productinfo/productinfo.bin:prodnv/productinfo.bin \
+ 	vendor/sprd/open-source/res/productinfo/default_connectivity_configure.ini:system/etc/connectivity_configure.ini \
+@@ -105,6 +105,10 @@ PRODUCT_COPY_FILES += \
+ 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
+ 	frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml
+ 
++# bug 982482
++PRODUCT_COPY_FILES += \
++  device/sprd/scx15/volume.cfg:system/etc/volume.cfg
++
+ ifeq ($(TARGET_BUILD_VARIANT),user)
+ PRODUCT_PROPERTY_OVERRIDES += \
+ 	persist.sys.sprd.modemreset=1 \
+diff --git a/scx15/volume.cfg b/scx15/volume.cfg
+new file mode 100644
+index 0000000..f92d88c
+--- /dev/null
++++ b/scx15/volume.cfg
+@@ -0,0 +1 @@
++create sdcard /storage/sdcard0
+-- 
+1.7.9.5
+
