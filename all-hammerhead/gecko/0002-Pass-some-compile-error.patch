@@ -1,0 +1,49 @@
+From 559aaf702ed144ab5569feb1cd32c6547a0e3497 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Tue, 28 Oct 2014 10:25:21 +0800
+Subject: [PATCH 2/3] Pass some compile error.
+
+---
+ memory/mozalloc/mozalloc.cpp | 5 +++--
+ mozglue/build/BionicGlue.cpp | 2 +-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/memory/mozalloc/mozalloc.cpp b/memory/mozalloc/mozalloc.cpp
+index 4eb70f7..d893532 100644
+--- a/memory/mozalloc/mozalloc.cpp
++++ b/memory/mozalloc/mozalloc.cpp
+@@ -186,7 +186,7 @@ moz_memalign(size_t boundary, size_t size)
+ void*
+ moz_xvalloc(size_t size)
+ {
+-    void* ptr = valloc(size);
++    void* ptr = NULL; //valloc(size);
+     if (UNLIKELY(!ptr)) {
+         mozalloc_handle_oom(size);
+         return moz_xvalloc(size);
+@@ -196,7 +196,8 @@ moz_xvalloc(size_t size)
+ void*
+ moz_valloc(size_t size)
+ {
+-    return valloc(size);
++    //return valloc(size);
++    return moz_xvalloc(size);
+ }
+ #endif // if defined(HAVE_VALLOC)
+ 
+diff --git a/mozglue/build/BionicGlue.cpp b/mozglue/build/BionicGlue.cpp
+index ec4ec6a..1bdd3fa 100644
+--- a/mozglue/build/BionicGlue.cpp
++++ b/mozglue/build/BionicGlue.cpp
+@@ -169,7 +169,7 @@ __wrap_PR_SetEnv(const char *string)
+     if ( !strchr(string, '=')) return(-1);
+ 
+     pthread_mutex_lock(&_pr_envLock);
+-    result = putenv(string);
++    result = putenv((char*)string);
+     pthread_mutex_unlock(&_pr_envLock);
+     return (result)? -1 : 0;
+ }
+-- 
+1.9.1
+
