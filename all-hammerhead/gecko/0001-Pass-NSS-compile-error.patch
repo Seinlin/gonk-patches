@@ -1,0 +1,61 @@
+From 491f3632139db11d09a17d6a044130c8f66ec8ea Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Tue, 28 Oct 2014 22:46:05 +0800
+Subject: [PATCH] Pass NSS compile error
+
+---
+ config/external/nss/Makefile.in      | 2 +-
+ security/nss/lib/Makefile            | 1 +
+ security/nss/lib/softoken/fipstokn.c | 4 ++--
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/config/external/nss/Makefile.in b/config/external/nss/Makefile.in
+index 85f3e11..fb50c5f 100644
+--- a/config/external/nss/Makefile.in
++++ b/config/external/nss/Makefile.in
+@@ -217,7 +217,7 @@ DEFAULT_GMAKE_FLAGS += \
+ 	OS_PTHREAD= \
+ 	$(NULL)
+ 
+-DEFAULT_GMAKE_FLAGS += ARCHFLAG='$(CFLAGS) -DCHECK_FORK_GETPID -DRTLD_NOLOAD=0 -include $(topsrcdir)/security/manager/android_stub.h'
++DEFAULT_GMAKE_FLAGS += ARCHFLAG='$(CFLAGS) -DCHECK_FORK_GETPID -include $(topsrcdir)/security/manager/android_stub.h'
+ endif
+ endif
+ 
+diff --git a/security/nss/lib/Makefile b/security/nss/lib/Makefile
+index a28bfd4..f5302e9 100644
+--- a/security/nss/lib/Makefile
++++ b/security/nss/lib/Makefile
+@@ -62,6 +62,7 @@ include $(CORE_DEPTH)/coreconf/rules.mk
+ # (7) Execute "local" rules. (OPTIONAL).                              #
+ #######################################################################
+ 
++$(error NSS_BUILD_WITHOUT_SOFTOKEN=$(NSS_BUILD_WITHOUT_SOFTOKEN))
+ ifeq ($(NSS_BUILD_WITHOUT_SOFTOKEN),1)
+ # Not included when building nss without softoken
+ UTIL_SRCDIR =
+diff --git a/security/nss/lib/softoken/fipstokn.c b/security/nss/lib/softoken/fipstokn.c
+index 9435e71..e0f0fd3 100644
+--- a/security/nss/lib/softoken/fipstokn.c
++++ b/security/nss/lib/softoken/fipstokn.c
+@@ -372,7 +372,7 @@ sftk_LogAuditMessage(NSSAuditSeverity severity, NSSAuditType auditType,
+     }
+     /* timestamp is provided by syslog in the message header */
+     syslog(level | LOG_USER /* facility */,
+-	   "NSS " SOFTOKEN_LIB_NAME "[pid=%d uid=%d]: %s",
++	   "NSS libsoftokn3.so [pid=%d uid=%d]: %s",
+ 	   (int)getpid(), (int)getuid(), msg);
+ #ifdef LINUX
+     if (pthread_once(&libaudit_once_control, libaudit_init) != 0) {
+@@ -382,7 +382,7 @@ sftk_LogAuditMessage(NSSAuditSeverity severity, NSSAuditType auditType,
+ 	int audit_fd;
+ 	int linuxAuditType;
+ 	int result = (severity != NSS_AUDIT_ERROR); /* 1=success; 0=failed */
+-	char *message = PR_smprintf("NSS " SOFTOKEN_LIB_NAME ": %s", msg);
++	char *message = PR_smprintf("NSS libsoftokn3.so: %s", msg);
+ 	if (!message) {
+ 	    return;
+ 	}
+-- 
+1.9.1
+
