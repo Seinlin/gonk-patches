@@ -1,0 +1,25 @@
+From d0e7db513bd3333acdc7e9ab47f5951831502b99 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 23:51:25 +0800
+Subject: [PATCH] Disable MOZ_ENABLE_PROFILER_SPS to pass compile error.
+
+---
+ configure.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.in b/configure.in
+index dde1153..1d4ad85 100644
+--- a/configure.in
++++ b/configure.in
+@@ -1739,7 +1739,7 @@ fi
+ dnl ========================================================
+ dnl SPS Profiler
+ dnl ========================================================
+-MOZ_ENABLE_PROFILER_SPS=1
++MOZ_ENABLE_PROFILER_SPS=
+ 
+ case "${OS_TARGET}" in
+ Android)
+-- 
+1.9.1
+
