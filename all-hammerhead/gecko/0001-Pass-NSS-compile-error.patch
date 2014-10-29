@@ -1,13 +1,14 @@
-From 491f3632139db11d09a17d6a044130c8f66ec8ea Mon Sep 17 00:00:00 2001
+From 30de7cd418520972189bc7b11669b61c372f666d Mon Sep 17 00:00:00 2001
 From: Kai-Zhen Li <kli@mozilla.com>
-Date: Tue, 28 Oct 2014 22:46:05 +0800
-Subject: [PATCH] Pass NSS compile error
+Date: Tue, 28 Oct 2014 23:57:57 +0800
+Subject: [PATCH] Pass NSS compile error.
 
 ---
  config/external/nss/Makefile.in      | 2 +-
+ security/nss/coreconf/Linux.mk       | 2 +-
  security/nss/lib/Makefile            | 1 +
  security/nss/lib/softoken/fipstokn.c | 4 ++--
- 3 files changed, 4 insertions(+), 3 deletions(-)
+ 4 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/config/external/nss/Makefile.in b/config/external/nss/Makefile.in
 index 85f3e11..fb50c5f 100644
@@ -22,6 +23,19 @@ index 85f3e11..fb50c5f 100644
  endif
  endif
  
+diff --git a/security/nss/coreconf/Linux.mk b/security/nss/coreconf/Linux.mk
+index 177a3c8..094fbb4 100644
+--- a/security/nss/coreconf/Linux.mk
++++ b/security/nss/coreconf/Linux.mk
+@@ -130,7 +130,7 @@ ifeq ($(USE_PTHREADS),1)
+ OS_PTHREAD = -lpthread 
+ endif
+ 
+-OS_CFLAGS		= $(DSO_CFLAGS) $(OS_REL_CFLAGS) $(ARCHFLAG) -Wall -Werror-implicit-function-declaration -Wno-switch -pipe -ffunction-sections -fdata-sections -DLINUX -Dlinux -DHAVE_STRERROR
++OS_CFLAGS		= $(DSO_CFLAGS) $(OS_REL_CFLAGS) $(ARCHFLAG) -Wall -Wno-switch -pipe -ffunction-sections -fdata-sections -DLINUX -Dlinux -DHAVE_STRERROR
+ OS_LIBS			= $(OS_PTHREAD) -ldl -lc
+ 
+ ifdef USE_PTHREADS
 diff --git a/security/nss/lib/Makefile b/security/nss/lib/Makefile
 index a28bfd4..f5302e9 100644
 --- a/security/nss/lib/Makefile

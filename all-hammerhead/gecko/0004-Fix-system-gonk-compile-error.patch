@@ -1,0 +1,276 @@
+From 49ddd42fa93ac80fbaecb8c43676c5bd76efab76 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 16:56:20 +0800
+Subject: [PATCH 04/13] Fix system/gonk compile error.
+
+---
+ dom/system/gonk/AudioChannelManager.h       |  2 +-
+ dom/system/gonk/AudioManager.cpp            |  3 +++
+ dom/system/gonk/AutoMounter.cpp             | 29 +++++++++++++++--------------
+ dom/system/gonk/AutoMounterSetting.cpp      |  4 ++++
+ dom/system/gonk/AutoMounterSetting.h        |  2 +-
+ dom/system/gonk/MozMtpDatabase.h            |  8 +++++++-
+ dom/system/gonk/MozMtpServer.cpp            | 15 +++++++--------
+ dom/system/gonk/MozMtpServer.h              |  4 ++++
+ dom/system/gonk/TimeZoneSettingObserver.cpp |  6 +++++-
+ dom/system/gonk/Volume.h                    |  1 +
+ 10 files changed, 48 insertions(+), 26 deletions(-)
+
+diff --git a/dom/system/gonk/AudioChannelManager.h b/dom/system/gonk/AudioChannelManager.h
+index ba9c619..13390a5 100644
+--- a/dom/system/gonk/AudioChannelManager.h
++++ b/dom/system/gonk/AudioChannelManager.h
+@@ -26,7 +26,6 @@ class AudioChannelManager MOZ_FINAL
+ {
+ public:
+   AudioChannelManager();
+-  virtual ~AudioChannelManager();
+ 
+   NS_DECL_ISUPPORTS_INHERITED
+   NS_DECL_NSIDOMEVENTLISTENER
+@@ -64,6 +63,7 @@ public:
+ 
+ private:
+   void NotifyVolumeControlChannelChanged();
++  virtual ~AudioChannelManager();
+ 
+   hal::SwitchState mState;
+   int32_t mVolumeChannel;
+diff --git a/dom/system/gonk/AudioManager.cpp b/dom/system/gonk/AudioManager.cpp
+index dbed18f..be0d11d 100644
+--- a/dom/system/gonk/AudioManager.cpp
++++ b/dom/system/gonk/AudioManager.cpp
+@@ -165,6 +165,9 @@ public:
+       NS_ConvertUTF16toUTF8(aName).get());
+     return NS_OK;
+   }
++
++private:
++  ~AudioChannelVolInitCallback() {}
+ };
+ 
+ NS_IMPL_ISUPPORTS(AudioChannelVolInitCallback, nsISettingsServiceCallback)
+diff --git a/dom/system/gonk/AutoMounter.cpp b/dom/system/gonk/AutoMounter.cpp
+index 2652e4e..b6d1864 100644
+--- a/dom/system/gonk/AutoMounter.cpp
++++ b/dom/system/gonk/AutoMounter.cpp
+@@ -226,20 +226,6 @@ public:
+     UpdateState();
+   }
+ 
+-  ~AutoMounter()
+-  {
+-    VolumeManager::VolumeArray::size_type numVolumes = VolumeManager::NumVolumes();
+-    VolumeManager::VolumeArray::index_type volIndex;
+-    for (volIndex = 0; volIndex < numVolumes; volIndex++) {
+-      RefPtr<Volume> vol = VolumeManager::GetVolume(volIndex);
+-      if (vol) {
+-        vol->UnregisterObserver(&mVolumeEventObserver);
+-      }
+-    }
+-    Volume::UnregisterObserver(&mVolumeEventObserver);
+-    VolumeManager::UnregisterStateObserver(&mVolumeManagerStateObserver);
+-  }
+-
+   void CheckVolumeSettings()
+   {
+     if (VolumeManager::State() != VolumeManager::VOLUMES_READY) {
+@@ -458,6 +444,21 @@ private:
+   RefPtr<VolumeResponseCallback>  mResponseCallback;
+   int32_t                         mMode;
+   MozMtpStorage::Array            mMozMtpStorage;
++
++  ~AutoMounter()
++  {
++    VolumeManager::VolumeArray::size_type numVolumes = VolumeManager::NumVolumes();
++    VolumeManager::VolumeArray::index_type volIndex;
++    for (volIndex = 0; volIndex < numVolumes; volIndex++) {
++      RefPtr<Volume> vol = VolumeManager::GetVolume(volIndex);
++      if (vol) {
++        vol->UnregisterObserver(&mVolumeEventObserver);
++      }
++    }
++    Volume::UnregisterObserver(&mVolumeEventObserver);
++    VolumeManager::UnregisterStateObserver(&mVolumeManagerStateObserver);
++  }
++
+ };
+ 
+ static StaticRefPtr<AutoMounter> sAutoMounter;
+diff --git a/dom/system/gonk/AutoMounterSetting.cpp b/dom/system/gonk/AutoMounterSetting.cpp
+index b44846c..f9a880a 100644
+--- a/dom/system/gonk/AutoMounterSetting.cpp
++++ b/dom/system/gonk/AutoMounterSetting.cpp
+@@ -60,6 +60,9 @@ public:
+     ERR("SettingsCallback::HandleError: %s\n", NS_LossyConvertUTF16toASCII(aName).get());
+     return NS_OK;
+   }
++
++private:
++  ~SettingsServiceCallback() {}
+ };
+ 
+ NS_IMPL_ISUPPORTS(SettingsServiceCallback, nsISettingsServiceCallback)
+@@ -88,6 +91,7 @@ public:
+   }
+ private:
+   nsCString mVolumeName;
++  ~CheckVolumeSettingsCallback() {}
+ };
+ 
+ NS_IMPL_ISUPPORTS(CheckVolumeSettingsCallback, nsISettingsServiceCallback)
+diff --git a/dom/system/gonk/AutoMounterSetting.h b/dom/system/gonk/AutoMounterSetting.h
+index 0e84982..9d35cb1 100644
+--- a/dom/system/gonk/AutoMounterSetting.h
++++ b/dom/system/gonk/AutoMounterSetting.h
+@@ -19,7 +19,6 @@ public:
+   NS_DECL_NSIOBSERVER
+ 
+   AutoMounterSetting();
+-  virtual ~AutoMounterSetting();
+ 
+   static void CheckVolumeSettings(const nsACString& aVolumeName);
+ 
+@@ -29,6 +28,7 @@ public:
+ 
+ private:
+   int32_t mStatus;
++  virtual ~AutoMounterSetting();
+ };
+ 
+ }   // namespace system
+diff --git a/dom/system/gonk/MozMtpDatabase.h b/dom/system/gonk/MozMtpDatabase.h
+index cf4bce5..5decd5e 100644
+--- a/dom/system/gonk/MozMtpDatabase.h
++++ b/dom/system/gonk/MozMtpDatabase.h
+@@ -30,7 +30,6 @@ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MozMtpDatabase)
+ 
+   MozMtpDatabase();
+-  virtual ~MozMtpDatabase();
+ 
+   // called from SendObjectInfo to reserve a database entry for the incoming file
+   virtual MtpObjectHandle beginSendObject(const char* aPath,
+@@ -121,6 +120,7 @@ public:
+                          const nsACString& aEventType);
+ 
+ private:
++  virtual ~MozMtpDatabase();
+ 
+   struct DbEntry
+   {
+@@ -145,6 +145,9 @@ private:
+     nsCString       mPath;
+     PRTime          mDateCreated;
+     PRTime          mDateModified;
++
++    private:
++      ~DbEntry() {}
+   };
+ 
+   template<class T>
+@@ -213,6 +216,9 @@ private:
+     MtpStorageID  mStorageID;
+     nsCString     mStoragePath;
+     nsCString     mStorageName;
++
++  private:
++    ~StorageEntry() {}
+   };
+   typedef ProtectedTArray<mozilla::RefPtr<StorageEntry> > StorageArray;
+ 
+diff --git a/dom/system/gonk/MozMtpServer.cpp b/dom/system/gonk/MozMtpServer.cpp
+index 98b8707..b3ee213 100644
+--- a/dom/system/gonk/MozMtpServer.cpp
++++ b/dom/system/gonk/MozMtpServer.cpp
+@@ -88,14 +88,6 @@ public:
+     obs->AddObserver(this, "file-watcher-update", false);
+   }
+ 
+-  ~FileWatcherUpdate()
+-  {
+-    MOZ_ASSERT(NS_IsMainThread());
+-
+-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+-    obs->RemoveObserver(this, "file-watcher-update");
+-  }
+-
+   NS_IMETHOD
+   Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
+   {
+@@ -135,6 +127,13 @@ public:
+ private:
+   nsRefPtr<MozMtpServer> mMozMtpServer;
+   nsCOMPtr<nsIThread> mIOThread;
++  ~FileWatcherUpdate()
++  {
++    MOZ_ASSERT(NS_IsMainThread());
++
++    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
++    obs->RemoveObserver(this, "file-watcher-update");
++  }
+ };
+ NS_IMPL_ISUPPORTS(FileWatcherUpdate, nsIObserver)
+ static StaticRefPtr<FileWatcherUpdate> sFileWatcherUpdate;
+diff --git a/dom/system/gonk/MozMtpServer.h b/dom/system/gonk/MozMtpServer.h
+index 1e4d109..9e0e014 100644
+--- a/dom/system/gonk/MozMtpServer.h
++++ b/dom/system/gonk/MozMtpServer.h
+@@ -35,6 +35,9 @@ public:
+     : MtpServer(aFd, aDatabase, aPtp, aFileGroup, aFilePerm, aDirectoryPerm)
+   {
+   }
++
++private:
++  ~RefCountedMtpServer() {}
+ };
+ 
+ class MozMtpServer
+@@ -53,6 +56,7 @@ private:
+   nsRefPtr<MozMtpDatabase> mMozMtpDatabase;
+   nsCOMPtr<nsIThread> mServerThread;
+   ScopedClose mMtpUsbFd;
++  ~MozMtpServer() {}
+ };
+ 
+ END_MTP_NAMESPACE
+diff --git a/dom/system/gonk/TimeZoneSettingObserver.cpp b/dom/system/gonk/TimeZoneSettingObserver.cpp
+index edc80d9..31bfea4 100644
+--- a/dom/system/gonk/TimeZoneSettingObserver.cpp
++++ b/dom/system/gonk/TimeZoneSettingObserver.cpp
+@@ -44,8 +44,9 @@ public:
+   NS_DECL_NSIOBSERVER
+ 
+   TimeZoneSettingObserver();
+-  virtual ~TimeZoneSettingObserver();
+   static nsresult SetTimeZone(const JS::Value &aValue, JSContext *aContext);
++private:
++  virtual ~TimeZoneSettingObserver();
+ };
+ 
+ class TimeZoneSettingCb MOZ_FINAL : public nsISettingsServiceCallback
+@@ -110,6 +111,9 @@ public:
+     ERR("TimeZoneSettingCb::HandleError: %s\n", NS_LossyConvertUTF16toASCII(aName).get());
+     return NS_OK;
+   }
++
++private:
++  ~TimeZoneSettingCb() {}
+ };
+ 
+ NS_IMPL_ISUPPORTS(TimeZoneSettingCb, nsISettingsServiceCallback)
+diff --git a/dom/system/gonk/Volume.h b/dom/system/gonk/Volume.h
+index ff8dd2c..2ca1b67 100644
+--- a/dom/system/gonk/Volume.h
++++ b/dom/system/gonk/Volume.h
+@@ -73,6 +73,7 @@ public:
+   static void UnregisterObserver(EventObserver* aObserver);
+ 
+ private:
++  ~Volume() {}
+   friend class AutoMounter;         // Calls StartXxx
+   friend class nsVolume;            // Calls UpdateMountLock
+   friend class VolumeManager;       // Calls HandleVoldResponse
+-- 
+1.9.1
+

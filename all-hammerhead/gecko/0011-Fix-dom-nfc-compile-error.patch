@@ -1,0 +1,32 @@
+From e8b3df2b9f22d72fe862a6480a5ca83269717097 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 16:59:02 +0800
+Subject: [PATCH 11/13] Fix dom/nfc compile error.
+
+---
+ dom/nfc/MozNDEFRecord.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dom/nfc/MozNDEFRecord.h b/dom/nfc/MozNDEFRecord.h
+index d5b04af..3243e13 100644
+--- a/dom/nfc/MozNDEFRecord.h
++++ b/dom/nfc/MozNDEFRecord.h
+@@ -40,7 +40,6 @@ public:
+   MozNDEFRecord(JSContext* aCx, nsPIDOMWindow* aWindow,
+                 const MozNDEFRecordOptions& aOptions);
+ 
+-  ~MozNDEFRecord();
+ 
+   nsIDOMWindow* GetParentObject() const
+   {
+@@ -84,6 +83,7 @@ public:
+   }
+ 
+ private:
++  ~MozNDEFRecord();
+   MozNDEFRecord() MOZ_DELETE;
+   nsRefPtr<nsPIDOMWindow> mWindow;
+   void HoldData();
+-- 
+1.9.1
+

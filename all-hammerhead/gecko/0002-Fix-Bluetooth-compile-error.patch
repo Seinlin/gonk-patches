@@ -1,0 +1,349 @@
+From 71736c07e41575bb9f5be90be8540adc8054621e Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 16:55:42 +0800
+Subject: [PATCH 02/13] Fix Bluetooth compile error.
+
+---
+ dom/bluetooth/BluetoothHidManager.h                |  2 +-
+ dom/bluetooth/BluetoothInterface.h                 | 30 +++++++++++++---------
+ dom/bluetooth/BluetoothProfileController.cpp       |  2 +-
+ dom/bluetooth/BluetoothProfileManagerBase.h        |  5 ++--
+ dom/bluetooth/BluetoothRilListener.h               |  8 +++---
+ dom/bluetooth/BluetoothService.cpp                 |  4 ++-
+ dom/bluetooth/bluedroid/BluetoothA2dpManager.h     |  2 +-
+ dom/bluetooth/bluedroid/BluetoothOppManager.h      |  2 +-
+ .../bluedroid/hfp/BluetoothHfpManager.cpp          |  2 ++
+ dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.h  |  2 +-
+ 10 files changed, 36 insertions(+), 23 deletions(-)
+
+diff --git a/dom/bluetooth/BluetoothHidManager.h b/dom/bluetooth/BluetoothHidManager.h
+index 568c080..693b80e 100644
+--- a/dom/bluetooth/BluetoothHidManager.h
++++ b/dom/bluetooth/BluetoothHidManager.h
+@@ -23,12 +23,12 @@ public:
+   }
+ 
+   static BluetoothHidManager* Get();
+-  virtual ~BluetoothHidManager();
+ 
+   // HID-specific functions
+   void HandleInputPropertyChanged(const BluetoothSignal& aSignal);
+ 
+ private:
++  virtual ~BluetoothHidManager();
+   BluetoothHidManager();
+   bool Init();
+   void Cleanup();
+diff --git a/dom/bluetooth/BluetoothInterface.h b/dom/bluetooth/BluetoothInterface.h
+index 684c66c..0b5f93a 100644
+--- a/dom/bluetooth/BluetoothInterface.h
++++ b/dom/bluetooth/BluetoothInterface.h
+@@ -21,7 +21,6 @@ class BluetoothSocketResultHandler
+ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BluetoothSocketResultHandler)
+ 
+-  virtual ~BluetoothSocketResultHandler() { }
+ 
+   virtual void OnError(BluetoothStatus aStatus)
+   {
+@@ -33,6 +32,8 @@ public:
+                        int aConnectionState) { }
+   virtual void Accept(int aSockFd, const nsAString& aBdAddress,
+                       int aConnectionState) { }
++protected:
++  virtual ~BluetoothSocketResultHandler() { }
+ };
+ 
+ class BluetoothSocketInterface
+@@ -145,8 +146,6 @@ class BluetoothHandsfreeResultHandler
+ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BluetoothHandsfreeResultHandler)
+ 
+-  virtual ~BluetoothHandsfreeResultHandler() { }
+-
+   virtual void OnError(BluetoothStatus aStatus)
+   {
+     BT_WARNING("Received error code %d", (int)aStatus);
+@@ -173,6 +172,9 @@ public:
+   virtual void AtResponse() { }
+   virtual void ClccResponse() { }
+   virtual void PhoneStateChange() { }
++
++protected:
++  virtual ~BluetoothHandsfreeResultHandler() { }
+ };
+ 
+ class BluetoothHandsfreeInterface
+@@ -251,7 +253,6 @@ protected:
+ class BluetoothA2dpNotificationHandler
+ {
+ public:
+-  virtual ~BluetoothA2dpNotificationHandler();
+ 
+   virtual void
+   ConnectionStateNotification(BluetoothA2dpConnectionState aState,
+@@ -266,6 +267,8 @@ public:
+ protected:
+   BluetoothA2dpNotificationHandler()
+   { }
++
++  virtual ~BluetoothA2dpNotificationHandler();
+ };
+ 
+ class BluetoothA2dpResultHandler
+@@ -273,8 +276,6 @@ class BluetoothA2dpResultHandler
+ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BluetoothA2dpResultHandler)
+ 
+-  virtual ~BluetoothA2dpResultHandler() { }
+-
+   virtual void OnError(BluetoothStatus aStatus)
+   {
+     BT_WARNING("Received error code %d", (int)aStatus);
+@@ -284,6 +285,9 @@ public:
+   virtual void Cleanup() { }
+   virtual void Connect() { }
+   virtual void Disconnect() { }
++
++protected:
++  virtual ~BluetoothA2dpResultHandler() { }
+ };
+ 
+ class BluetoothA2dpInterface
+@@ -310,8 +314,6 @@ protected:
+ class BluetoothAvrcpNotificationHandler
+ {
+ public:
+-  virtual ~BluetoothAvrcpNotificationHandler();
+-
+   virtual void
+   GetPlayStatusNotification()
+   { }
+@@ -368,6 +370,8 @@ public:
+ protected:
+   BluetoothAvrcpNotificationHandler()
+   { }
++
++  virtual ~BluetoothAvrcpNotificationHandler();
+ };
+ 
+ class BluetoothAvrcpResultHandler
+@@ -375,8 +379,6 @@ class BluetoothAvrcpResultHandler
+ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BluetoothAvrcpResultHandler)
+ 
+-  virtual ~BluetoothAvrcpResultHandler() { }
+-
+   virtual void OnError(BluetoothStatus aStatus)
+   {
+     BT_WARNING("Received error code %d", (int)aStatus);
+@@ -401,6 +403,9 @@ public:
+   virtual void RegisterNotificationRsp() { }
+ 
+   virtual void SetVolume() { }
++
++protected: 
++  virtual ~BluetoothAvrcpResultHandler() { }
+ };
+ 
+ class BluetoothAvrcpInterface
+@@ -505,8 +510,6 @@ class BluetoothResultHandler
+ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BluetoothResultHandler)
+ 
+-  virtual ~BluetoothResultHandler() { }
+-
+   virtual void OnError(BluetoothStatus aStatus)
+   {
+     BT_LOGR("Received error code %d", aStatus);
+@@ -542,6 +545,9 @@ public:
+   virtual void DutModeSend() { }
+ 
+   virtual void LeTestMode() { }
++
++protected:
++  virtual ~BluetoothResultHandler() { }
+ };
+ 
+ class BluetoothInterface
+diff --git a/dom/bluetooth/BluetoothProfileController.cpp b/dom/bluetooth/BluetoothProfileController.cpp
+index c9be3fe..0c77d9c 100644
+--- a/dom/bluetooth/BluetoothProfileController.cpp
++++ b/dom/bluetooth/BluetoothProfileController.cpp
+@@ -39,12 +39,12 @@ public:
+     MOZ_ASSERT(aController);
+   }
+ 
++private:
+   virtual ~CheckProfileStatusCallback()
+   {
+     mController = nullptr;
+   }
+ 
+-private:
+   nsRefPtr<BluetoothProfileController> mController;
+ };
+ 
+diff --git a/dom/bluetooth/BluetoothProfileManagerBase.h b/dom/bluetooth/BluetoothProfileManagerBase.h
+index c63b7df..7528759 100644
+--- a/dom/bluetooth/BluetoothProfileManagerBase.h
++++ b/dom/bluetooth/BluetoothProfileManagerBase.h
+@@ -33,11 +33,12 @@ class BluetoothProfileResultHandler
+ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BluetoothProfileResultHandler);
+ 
+-  virtual ~BluetoothProfileResultHandler() { }
+-
+   virtual void OnError(nsresult aResult) { }
+   virtual void Init() { }
+   virtual void Deinit() { }
++
++protected:  
++  virtual ~BluetoothProfileResultHandler() { }
+ };
+ 
+ class BluetoothProfileManagerBase : public nsIObserver
+diff --git a/dom/bluetooth/BluetoothRilListener.h b/dom/bluetooth/BluetoothRilListener.h
+index e9ca6bb..d9d59ab 100644
+--- a/dom/bluetooth/BluetoothRilListener.h
++++ b/dom/bluetooth/BluetoothRilListener.h
+@@ -26,13 +26,13 @@ public:
+   NS_DECL_NSIICCLISTENER
+ 
+   IccListener() { }
+-  virtual ~IccListener() { }
+ 
+   bool Listen(bool aStart);
+   void SetOwner(BluetoothRilListener *aOwner);
+ 
+ private:
+   BluetoothRilListener* mOwner;
++  virtual ~IccListener() { }
+ };
+ 
+ class MobileConnectionListener : public nsIMobileConnectionListener
+@@ -43,12 +43,12 @@ public:
+ 
+   MobileConnectionListener(uint32_t aClientId)
+   : mClientId(aClientId) { }
+-  virtual ~MobileConnectionListener() { }
+ 
+   bool Listen(bool aStart);
+ 
+ private:
+   uint32_t mClientId;
++  virtual ~MobileConnectionListener() { }
+ };
+ 
+ class TelephonyListener : public nsITelephonyListener
+@@ -58,9 +58,11 @@ public:
+   NS_DECL_NSITELEPHONYLISTENER
+ 
+   TelephonyListener() { }
+-  virtual ~TelephonyListener() { }
+ 
+   bool Listen(bool aStart);
++
++private:  
++  virtual ~TelephonyListener() { }
+ };
+ 
+ class BluetoothRilListener
+diff --git a/dom/bluetooth/BluetoothService.cpp b/dom/bluetooth/BluetoothService.cpp
+index 6a97df1..927d1db 100644
+--- a/dom/bluetooth/BluetoothService.cpp
++++ b/dom/bluetooth/BluetoothService.cpp
+@@ -158,7 +158,6 @@ BluetoothService::ToggleBtAck::Run()
+ 
+   if (sInShutdown) {
+     sBluetoothService = nullptr;
+-    return NS_OK;
+   }
+ 
+   // Update mEnabled of BluetoothService object since
+@@ -206,6 +205,9 @@ public:
+     BT_WARNING("Unable to get value for '" BLUETOOTH_ENABLED_SETTING "'");
+     return NS_OK;
+   }
++
++private:
++  virtual ~StartupTask() {}
+ };
+ 
+ NS_IMPL_ISUPPORTS(BluetoothService::StartupTask, nsISettingsServiceCallback);
+diff --git a/dom/bluetooth/bluedroid/BluetoothA2dpManager.h b/dom/bluetooth/bluedroid/BluetoothA2dpManager.h
+index 1c34607..356ab77 100644
+--- a/dom/bluetooth/bluedroid/BluetoothA2dpManager.h
++++ b/dom/bluetooth/bluedroid/BluetoothA2dpManager.h
+@@ -35,7 +35,6 @@ public:
+   static BluetoothA2dpManager* Get();
+   static void InitA2dpInterface(BluetoothProfileResultHandler* aRes);
+   static void DeinitA2dpInterface(BluetoothProfileResultHandler* aRes);
+-  virtual ~BluetoothA2dpManager();
+ 
+   void OnConnectError();
+   void OnDisconnectError();
+@@ -67,6 +66,7 @@ public:
+ 
+ private:
+   BluetoothA2dpManager();
++  virtual ~BluetoothA2dpManager();
+   void ResetA2dp();
+   void ResetAvrcp();
+ 
+diff --git a/dom/bluetooth/bluedroid/BluetoothOppManager.h b/dom/bluetooth/bluedroid/BluetoothOppManager.h
+index fbfda2f..037bf52 100644
+--- a/dom/bluetooth/bluedroid/BluetoothOppManager.h
++++ b/dom/bluetooth/bluedroid/BluetoothOppManager.h
+@@ -43,7 +43,6 @@ public:
+ 
+   static const int MAX_PACKET_LENGTH = 0xFFFE;
+ 
+-  virtual ~BluetoothOppManager();
+   static BluetoothOppManager* Get();
+   void ClientDataHandler(mozilla::ipc::UnixSocketRawData* aMessage);
+   void ServerDataHandler(mozilla::ipc::UnixSocketRawData* aMessage);
+@@ -75,6 +74,7 @@ public:
+ 
+ private:
+   BluetoothOppManager();
++  virtual ~BluetoothOppManager();
+   bool Init();
+   void HandleShutdown();
+ 
+diff --git a/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.cpp b/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.cpp
+index d30a9b7..323ef4b 100644
+--- a/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.cpp
++++ b/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.cpp
+@@ -95,6 +95,8 @@ public:
+     BT_WARNING("Unable to get value for '" AUDIO_VOLUME_BT_SCO_ID "'");
+     return NS_OK;
+   }
++private:
++  virtual ~GetVolumeTask() {}
+ };
+ 
+ class BluetoothHfpManager::CloseScoTask : public Task
+diff --git a/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.h b/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.h
+index 4cafcfe..945ce01 100644
+--- a/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.h
++++ b/dom/bluetooth/bluedroid/hfp/BluetoothHfpManager.h
+@@ -86,7 +86,6 @@ public:
+   }
+ 
+   static BluetoothHfpManager* Get();
+-  virtual ~BluetoothHfpManager();
+   static void InitHfpInterface(BluetoothProfileResultHandler* aRes);
+   static void DeinitHfpInterface(BluetoothProfileResultHandler* aRes);
+ 
+@@ -145,6 +144,7 @@ private:
+   friend class MainThreadTask;
+ 
+   BluetoothHfpManager();
++  virtual ~BluetoothHfpManager();
+   bool Init();
+   void Cleanup();
+ 
+-- 
+1.9.1
+

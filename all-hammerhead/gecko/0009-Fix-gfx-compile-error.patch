@@ -1,0 +1,25 @@
+From d31f4781c56ae80448e210caf91d2fe14c14440b Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 16:58:23 +0800
+Subject: [PATCH 09/13] Fix gfx compile error.
+
+---
+ gfx/layers/ipc/SharedBufferManagerParent.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/gfx/layers/ipc/SharedBufferManagerParent.cpp b/gfx/layers/ipc/SharedBufferManagerParent.cpp
+index c815415..5a0a8c1 100644
+--- a/gfx/layers/ipc/SharedBufferManagerParent.cpp
++++ b/gfx/layers/ipc/SharedBufferManagerParent.cpp
+@@ -94,6 +94,8 @@ public:
+     return NS_OK;
+   }
+ 
++private:
++  ~GrallocReporter() {}
+ };
+ 
+ NS_IMPL_ISUPPORTS(GrallocReporter, nsIMemoryReporter)
+-- 
+1.9.1
+

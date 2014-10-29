@@ -1,0 +1,44 @@
+From 009996d0e494c6a0566607355df86907eea78ab7 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 14:45:45 +0800
+Subject: [PATCH 3/4] Add asm/page.h to Pass compile error.
+
+---
+ libc/kernel/uapi/asm-arm/asm/page.h | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+ create mode 100644 libc/kernel/uapi/asm-arm/asm/page.h
+
+diff --git a/libc/kernel/uapi/asm-arm/asm/page.h b/libc/kernel/uapi/asm-arm/asm/page.h
+new file mode 100644
+index 0000000..3c45724
+--- /dev/null
++++ b/libc/kernel/uapi/asm-arm/asm/page.h
+@@ -0,0 +1,25 @@
++/****************************************************************************
++ ****************************************************************************
++ ***
++ ***   This header was automatically generated from a Linux kernel header
++ ***   of the same name, to make information necessary for userspace to
++ ***   call into the kernel available to libc.  It contains only constants,
++ ***   structures, and macros generated from the original header, and thus,
++ ***   contains no copyrightable information.
++ ***
++ ***   To edit the content of this header, modify the corresponding
++ ***   source file (e.g. under external/kernel-headers/original/) then
++ ***   run bionic/libc/kernel/tools/update_all.py
++ ***
++ ***   Any manual change here will be lost the next time this script will
++ ***   be run. You've been warned!
++ ***
++ ****************************************************************************
++ ****************************************************************************/
++#ifndef _ASMARM_PAGE_H
++#define _ASMARM_PAGE_H
++#define PAGE_SHIFT 12
++#define PAGE_SIZE (1UL << PAGE_SHIFT)
++/* WARNING: DO NOT EDIT, AUTO-GENERATED CODE - SEE TOP FOR INSTRUCTIONS */
++#define PAGE_MASK (~(PAGE_SIZE-1))
++#endif
+-- 
+1.9.1
+

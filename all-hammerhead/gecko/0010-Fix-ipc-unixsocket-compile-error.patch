@@ -1,0 +1,32 @@
+From 871758410b64d711f8a52f5454db75852cb8b899 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 16:58:42 +0800
+Subject: [PATCH 10/13] Fix ipc/unixsocket compile error.
+
+---
+ ipc/unixsocket/SocketBase.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ipc/unixsocket/SocketBase.h b/ipc/unixsocket/SocketBase.h
+index 988f0be..9ba9573 100644
+--- a/ipc/unixsocket/SocketBase.h
++++ b/ipc/unixsocket/SocketBase.h
+@@ -211,7 +211,6 @@ class SocketBase
+ public:
+   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SocketBase)
+ 
+-  virtual ~SocketBase();
+ 
+   SocketConnectionStatus GetConnectionStatus() const;
+ 
+@@ -255,6 +254,7 @@ public:
+   void NotifyDisconnect();
+ 
+ protected:
++  virtual ~SocketBase();
+   SocketBase();
+ 
+   void SetConnectionStatus(SocketConnectionStatus aConnectionStatus);
+-- 
+1.9.1
+

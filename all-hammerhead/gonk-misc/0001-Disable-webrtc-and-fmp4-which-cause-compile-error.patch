@@ -1,0 +1,23 @@
+From 34ddf14e3069348271285f377d067b4bf6813162 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 16:45:05 +0800
+Subject: [PATCH 1/2] Disable webrtc and fmp4 which cause compile error.
+
+---
+ default-gecko-config | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/default-gecko-config b/default-gecko-config
+index 9265f29..9b0f20d 100644
+--- a/default-gecko-config
++++ b/default-gecko-config
+@@ -81,3 +81,6 @@ if [ "$TARGET_BUILD_VARIANT" = eng ]; then
+   # the profiler enabled by default
+   ac_add_options --enable-profiling
+ fi
++
++ac_add_options --disable-webrtc
++ac_add_options --disable-fmp4
+-- 
+1.9.1
+

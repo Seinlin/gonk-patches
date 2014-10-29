@@ -1,0 +1,67 @@
+From 2f8bc2b526f77522670f395d5c83cb2206a04208 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Wed, 29 Oct 2014 16:57:57 +0800
+Subject: [PATCH 08/13] Fix hal/gonk compile error.
+
+---
+ hal/gonk/GonkHal.cpp    | 3 +++
+ hal/gonk/GonkSwitch.cpp | 8 ++++----
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/hal/gonk/GonkHal.cpp b/hal/gonk/GonkHal.cpp
+index fa7c627..168341b 100644
+--- a/hal/gonk/GonkHal.cpp
++++ b/hal/gonk/GonkHal.cpp
+@@ -267,6 +267,7 @@ public:
+   static bool ShuttingDown() { return sShuttingDown; }
+ 
+ private:
++  ~VibratorRunnable() {}
+   Monitor mMonitor;
+ 
+   // The currently-playing pattern.
+@@ -465,6 +466,7 @@ public:
+   }
+ 
+ private:
++  ~BatteryObserver() {}
+   nsRefPtr<BatteryUpdater> mUpdater;
+ };
+ 
+@@ -1161,6 +1163,7 @@ public:
+   NS_DECL_ISUPPORTS
+   NS_DECL_NSIOBSERVER
+ private:
++  ~OomVictimLogger() {}
+   double mLastLineChecked;
+   ScopedFreePtr<regex_t> mRegexes;
+ };
+diff --git a/hal/gonk/GonkSwitch.cpp b/hal/gonk/GonkSwitch.cpp
+index 65c9e1b..e7f1857 100644
+--- a/hal/gonk/GonkSwitch.cpp
++++ b/hal/gonk/GonkSwitch.cpp
+@@ -61,10 +61,6 @@ public:
+     GetInitialState();
+   }
+ 
+-  virtual ~SwitchHandler()
+-  {
+-  }
+-
+   bool CheckEvent(NetlinkEvent* aEvent)
+   {
+     if (strcmp(GetSubsystem(), aEvent->getSubsystem()) ||
+@@ -86,6 +82,10 @@ public:
+     return mDevice;
+   }
+ protected:
++  virtual ~SwitchHandler()
++  {
++  }
++
+   virtual const char* GetSubsystem()
+   {
+     return "switch";
+-- 
+1.9.1
+
