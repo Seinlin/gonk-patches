@@ -1,25 +1,31 @@
-From 312f3c8575070396a885ae74cfe8573164b2a9d3 Mon Sep 17 00:00:00 2001
+From 38aa4a3cb807b25a692d7d01c58e5b2baffd35d7 Mon Sep 17 00:00:00 2001
 From: Kai-Zhen Li <kli@mozilla.com>
 Date: Wed, 29 Oct 2014 17:02:30 +0800
 Subject: [PATCH 2/2] Do not enable --enable-profiling by default.
 
 ---
- default-gecko-config | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ default-gecko-config | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/default-gecko-config b/default-gecko-config
-index 9b0f20d..cc926bc 100644
+index 9b0f20d..efb5304 100644
 --- a/default-gecko-config
 +++ b/default-gecko-config
-@@ -79,7 +79,7 @@ fi
- if [ "$TARGET_BUILD_VARIANT" = eng ]; then
+@@ -76,11 +76,11 @@ if [ "${ENABLE_GLOBAL_PRELINK:-0}" != 0 ]; then
+ ac_add_options --disable-elf-hack
+ fi
+ 
+-if [ "$TARGET_BUILD_VARIANT" = eng ]; then
++#if [ "$TARGET_BUILD_VARIANT" = eng ]; then
    # bug 979947 - Engineering builds should have
    # the profiler enabled by default
 -  ac_add_options --enable-profiling
-+#ac_add_options --enable-profiling
- fi
+-fi
++  # ac_add_options --enable-profiling
++#fi
  
  ac_add_options --disable-webrtc
+ ac_add_options --disable-fmp4
 -- 
 1.9.1
 
