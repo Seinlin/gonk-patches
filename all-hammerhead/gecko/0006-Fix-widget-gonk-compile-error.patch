@@ -1,7 +1,7 @@
-From a6c8f10e4e08fb46afd97ff111c4112e2cf7cc40 Mon Sep 17 00:00:00 2001
+From b30bde6fb0aa614592ac702db5383773cc13334c Mon Sep 17 00:00:00 2001
 From: Kai-Zhen Li <kli@mozilla.com>
-Date: Wed, 29 Oct 2014 16:57:21 +0800
-Subject: [PATCH 06/13] Fix widget/gonk compile error.
+Date: Sat, 1 Nov 2014 00:38:47 +0800
+Subject: [PATCH] Fix widget gonk compile error
 
 ---
  widget/gonk/GeckoTouchDispatcher.cpp         | 4 ++++
@@ -13,7 +13,7 @@ Subject: [PATCH 06/13] Fix widget/gonk compile error.
  6 files changed, 19 insertions(+), 4 deletions(-)
 
 diff --git a/widget/gonk/GeckoTouchDispatcher.cpp b/widget/gonk/GeckoTouchDispatcher.cpp
-index f89163d..099c2b4 100644
+index 47ba24e..4b0fb44 100644
 --- a/widget/gonk/GeckoTouchDispatcher.cpp
 +++ b/widget/gonk/GeckoTouchDispatcher.cpp
 @@ -19,7 +19,9 @@
@@ -26,7 +26,7 @@ index f89163d..099c2b4 100644
  #include "base/basictypes.h"
  #include "gfxPrefs.h"
  #include "libui/Input.h"
-@@ -382,6 +384,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
+@@ -384,6 +386,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
    WidgetTouchEvent event = aMultiTouch.ToWidgetTouchEvent(nullptr);
    nsEventStatus status = nsWindow::DispatchInputEvent(event, &captured);
  
@@ -34,28 +34,28 @@ index f89163d..099c2b4 100644
    if (mEnabledUniformityInfo && profiler_is_active()) {
      const char* touchAction = "Invalid";
      switch (aMultiTouch.mType) {
-@@ -401,6 +404,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
+@@ -403,6 +406,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
      TouchDataPayload* payload = new TouchDataPayload(touchPoint);
      PROFILER_MARKER_PAYLOAD(touchAction, payload);
    }
-+#endif    
++#endif
  
    if (!captured && (aMultiTouch.mTouches.Length() == 1)) {
      bool forwardToChildren = status != nsEventStatus_eConsumeNoDefault;
 diff --git a/widget/gonk/GeckoTouchDispatcher.h b/widget/gonk/GeckoTouchDispatcher.h
-index e94e864..ba3b961 100644
+index 1fc0e24..7268b35 100644
 --- a/widget/gonk/GeckoTouchDispatcher.h
 +++ b/widget/gonk/GeckoTouchDispatcher.h
 @@ -49,6 +49,9 @@ public:
-   void DispatchTouchMoveEvents(uint64_t aVsyncTime);
-   static bool NotifyVsync(uint64_t aVsyncTimestamp);
+   void DispatchTouchMoveEvents(TimeStamp aVsyncTime);
+   static bool NotifyVsync(TimeStamp aVsyncTimestamp);
  
 +protected:
 +  ~GeckoTouchDispatcher() {}
 +
  private:
-   int32_t InterpolateTouch(MultiTouchInput& aOutTouch, uint64_t aSampleTime);
-   int32_t ExtrapolateTouch(MultiTouchInput& aOutTouch, uint64_t aSampleTime);
+   int32_t InterpolateTouch(MultiTouchInput& aOutTouch, TimeStamp aSampleTime);
+   int32_t ExtrapolateTouch(MultiTouchInput& aOutTouch, TimeStamp aSampleTime);
 diff --git a/widget/gonk/GonkMemoryPressureMonitoring.cpp b/widget/gonk/GonkMemoryPressureMonitoring.cpp
 index 949f36c..a3f57d03 100644
 --- a/widget/gonk/GonkMemoryPressureMonitoring.cpp
@@ -91,7 +91,7 @@ index 598e489..4e5ff2d 100644
              'GonkBufferQueueKK.cpp',
              'GonkConsumerBaseKK.cpp',
 diff --git a/widget/gonk/nsClipboard.h b/widget/gonk/nsClipboard.h
-index 4b1b2ab..d9a4a1a 100644
+index 4b1b2ab..7aa6a48 100644
 --- a/widget/gonk/nsClipboard.h
 +++ b/widget/gonk/nsClipboard.h
 @@ -16,6 +16,9 @@ public:
@@ -99,13 +99,13 @@ index 4b1b2ab..d9a4a1a 100644
  
    nsClipboard();
 +
-+private:  
++private:
 +  ~nsClipboard() {}
  };
  
  #endif
 diff --git a/widget/gonk/nsScreenManagerGonk.h b/widget/gonk/nsScreenManagerGonk.h
-index fc2ab4f..1eae8c1 100644
+index fc2ab4f..c4851ef 100644
 --- a/widget/gonk/nsScreenManagerGonk.h
 +++ b/widget/gonk/nsScreenManagerGonk.h
 @@ -29,7 +29,6 @@ class nsScreenGonk : public nsBaseScreen
@@ -137,7 +137,7 @@ index fc2ab4f..1eae8c1 100644
  protected:
      nsCOMPtr<nsIScreen> mOneScreen;
 +
-+private:    
++private:
 +    ~nsScreenManagerGonk();
  };
  
