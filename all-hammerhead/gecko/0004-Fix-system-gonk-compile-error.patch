@@ -1,21 +1,3 @@
-From 49ddd42fa93ac80fbaecb8c43676c5bd76efab76 Mon Sep 17 00:00:00 2001
-From: Kai-Zhen Li <kli@mozilla.com>
-Date: Wed, 29 Oct 2014 16:56:20 +0800
-Subject: [PATCH 04/13] Fix system/gonk compile error.
-
----
- dom/system/gonk/AudioChannelManager.h       |  2 +-
- dom/system/gonk/AudioManager.cpp            |  3 +++
- dom/system/gonk/AutoMounter.cpp             | 29 +++++++++++++++--------------
- dom/system/gonk/AutoMounterSetting.cpp      |  4 ++++
- dom/system/gonk/AutoMounterSetting.h        |  2 +-
- dom/system/gonk/MozMtpDatabase.h            |  8 +++++++-
- dom/system/gonk/MozMtpServer.cpp            | 15 +++++++--------
- dom/system/gonk/MozMtpServer.h              |  4 ++++
- dom/system/gonk/TimeZoneSettingObserver.cpp |  6 +++++-
- dom/system/gonk/Volume.h                    |  1 +
- 10 files changed, 48 insertions(+), 26 deletions(-)
-
 diff --git a/dom/system/gonk/AudioChannelManager.h b/dom/system/gonk/AudioChannelManager.h
 index ba9c619..13390a5 100644
 --- a/dom/system/gonk/AudioChannelManager.h
@@ -50,53 +32,6 @@ index dbed18f..be0d11d 100644
  };
  
  NS_IMPL_ISUPPORTS(AudioChannelVolInitCallback, nsISettingsServiceCallback)
-diff --git a/dom/system/gonk/AutoMounter.cpp b/dom/system/gonk/AutoMounter.cpp
-index 2652e4e..b6d1864 100644
---- a/dom/system/gonk/AutoMounter.cpp
-+++ b/dom/system/gonk/AutoMounter.cpp
-@@ -226,20 +226,6 @@ public:
-     UpdateState();
-   }
- 
--  ~AutoMounter()
--  {
--    VolumeManager::VolumeArray::size_type numVolumes = VolumeManager::NumVolumes();
--    VolumeManager::VolumeArray::index_type volIndex;
--    for (volIndex = 0; volIndex < numVolumes; volIndex++) {
--      RefPtr<Volume> vol = VolumeManager::GetVolume(volIndex);
--      if (vol) {
--        vol->UnregisterObserver(&mVolumeEventObserver);
--      }
--    }
--    Volume::UnregisterObserver(&mVolumeEventObserver);
--    VolumeManager::UnregisterStateObserver(&mVolumeManagerStateObserver);
--  }
--
-   void CheckVolumeSettings()
-   {
-     if (VolumeManager::State() != VolumeManager::VOLUMES_READY) {
-@@ -458,6 +444,21 @@ private:
-   RefPtr<VolumeResponseCallback>  mResponseCallback;
-   int32_t                         mMode;
-   MozMtpStorage::Array            mMozMtpStorage;
-+
-+  ~AutoMounter()
-+  {
-+    VolumeManager::VolumeArray::size_type numVolumes = VolumeManager::NumVolumes();
-+    VolumeManager::VolumeArray::index_type volIndex;
-+    for (volIndex = 0; volIndex < numVolumes; volIndex++) {
-+      RefPtr<Volume> vol = VolumeManager::GetVolume(volIndex);
-+      if (vol) {
-+        vol->UnregisterObserver(&mVolumeEventObserver);
-+      }
-+    }
-+    Volume::UnregisterObserver(&mVolumeEventObserver);
-+    VolumeManager::UnregisterStateObserver(&mVolumeManagerStateObserver);
-+  }
-+
- };
- 
- static StaticRefPtr<AutoMounter> sAutoMounter;
 diff --git a/dom/system/gonk/AutoMounterSetting.cpp b/dom/system/gonk/AutoMounterSetting.cpp
 index b44846c..f9a880a 100644
 --- a/dom/system/gonk/AutoMounterSetting.cpp
@@ -260,17 +195,14 @@ index edc80d9..31bfea4 100644
  
  NS_IMPL_ISUPPORTS(TimeZoneSettingCb, nsISettingsServiceCallback)
 diff --git a/dom/system/gonk/Volume.h b/dom/system/gonk/Volume.h
-index ff8dd2c..2ca1b67 100644
+index 68a6a4a..f107957 100644
 --- a/dom/system/gonk/Volume.h
 +++ b/dom/system/gonk/Volume.h
-@@ -73,6 +73,7 @@ public:
-   static void UnregisterObserver(EventObserver* aObserver);
+@@ -86,6 +86,7 @@ public:
+   static void UnregisterVolumeObserver(EventObserver* aObserver, const char* aName);
  
  private:
 +  ~Volume() {}
    friend class AutoMounter;         // Calls StartXxx
    friend class nsVolume;            // Calls UpdateMountLock
    friend class VolumeManager;       // Calls HandleVoldResponse
--- 
-1.9.1
-
