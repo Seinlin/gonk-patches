@@ -17,7 +17,7 @@ index 948e70a..c871a86 100644
      ]
      OS_LIBS += CONFIG['MOZ_ZLIB_LIBS']
 -    if CONFIG['ANDROID_VERSION'] in ('17', '18', '19'):
-+    if CONFIG['ANDROID_VERSION'] in ('17', '18', '19', '20'):
++    if CONFIG['ANDROID_VERSION'] in ('17', '18', '19', '21'):
          OS_LIBS += [
              'gui',
              'suspend',
@@ -29,7 +29,7 @@ index 191d8be..3f7e02a 100644
          AC_DEFINE(MOZ_AUDIO_OFFLOAD)
  	MOZ_FMP4=1
          ;;
-+    20)
++    21)
 +        GONK_INCLUDES="-I$gonkdir/frameworks/native/include -I$gonkdir/frameworks/av/include -I$gonkdir/frameworks/av/include/media -I$gonkdir/frameworks/av/include/camera -I$gonkdir/frameworks/native/include/media/openmax -I$gonkdir/frameworks/av/media/libstagefright/include"
 +        MOZ_B2G_CAMERA=1
 +        MOZ_B2G_BT=1
