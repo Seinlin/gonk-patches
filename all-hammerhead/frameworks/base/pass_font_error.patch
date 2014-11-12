@@ -1,0 +1,23 @@
+diff --git a/data/fonts/Android.mk b/data/fonts/Android.mk
+index 80fb1fd..732bf8d 100644
+--- a/data/fonts/Android.mk
++++ b/data/fonts/Android.mk
+@@ -35,12 +35,12 @@ endef
+ ##########################################
+ # The following fonts are distributed as symlink only.
+ ##########################################
+-$(eval $(call create-font-symlink,DroidSans.ttf,Roboto-Regular.ttf))
+-$(eval $(call create-font-symlink,DroidSans-Bold.ttf,Roboto-Bold.ttf))
+-$(eval $(call create-font-symlink,DroidSerif-Regular.ttf,NotoSerif-Regular.ttf))
+-$(eval $(call create-font-symlink,DroidSerif-Bold.ttf,NotoSerif-Bold.ttf))
+-$(eval $(call create-font-symlink,DroidSerif-Italic.ttf,NotoSerif-Italic.ttf))
+-$(eval $(call create-font-symlink,DroidSerif-BoldItalic.ttf,NotoSerif-BoldItalic.ttf))
++# $(eval $(call create-font-symlink,DroidSans.ttf,Roboto-Regular.ttf))
++# $(eval $(call create-font-symlink,DroidSans-Bold.ttf,Roboto-Bold.ttf))
++# $(eval $(call create-font-symlink,DroidSerif-Regular.ttf,NotoSerif-Regular.ttf))
++# $(eval $(call create-font-symlink,DroidSerif-Bold.ttf,NotoSerif-Bold.ttf))
++# $(eval $(call create-font-symlink,DroidSerif-Italic.ttf,NotoSerif-Italic.ttf))
++# $(eval $(call create-font-symlink,DroidSerif-BoldItalic.ttf,NotoSerif-BoldItalic.ttf))
+ 
+ extra_font_files := \
+     DroidSans.ttf \

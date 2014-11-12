@@ -1,13 +1,13 @@
 diff --git a/Android.mk b/Android.mk
-index fa349ce..79a6f59 100644
+index 28436ff..1776b67 100644
 --- a/Android.mk
 +++ b/Android.mk
-@@ -634,7 +634,8 @@ LOCAL_C_INCLUDES := \
- 	external/jpeg \
- 	external/webp/include \
- 	frameworks/base/opengl/include \
--	external/expat/lib
-+	external/expat/lib \
+@@ -564,7 +564,8 @@ LOCAL_C_INCLUDES := \
+ 	$(LOCAL_PATH)/include/pdf \
+ 	$(LOCAL_PATH)/src/pdf \
+ 	external/sfntly/cpp/src \
+-	external/zlib
++	external/zlib \
 +	external/libcxx/include
  
  LOCAL_EXPORT_C_INCLUDE_DIRS := \

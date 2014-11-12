@@ -1,0 +1,13 @@
+diff --git a/Android.mk b/Android.mk
+index 4e8fcee..1328de5 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -77,7 +77,7 @@ LOCAL_SRC_FILES := \
+ LOCAL_CFLAGS := -Werror -fvisibility=protected
+ LOCAL_C_INCLUDES := libcore/include
+ LOCAL_SHARED_LIBRARIES := liblog
+-LOCAL_LDFLAGS := -ldl
++LOCAL_LDFLAGS := -Wl,--no-as-needed -ldl
+ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/Android.mk
+ LOCAL_MULTILIB := both
+ include $(BUILD_HOST_SHARED_LIBRARY)

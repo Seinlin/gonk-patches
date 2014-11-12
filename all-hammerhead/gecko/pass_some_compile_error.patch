@@ -1,0 +1,25 @@
+diff --git a/libnativebridge/Android.mk b/libnativebridge/Android.mk
+index 6c2e43e..a3b9008 100644
+--- a/libnativebridge/Android.mk
++++ b/libnativebridge/Android.mk
+@@ -32,7 +32,7 @@ LOCAL_CLANG := true
+ LOCAL_CPP_EXTENSION := .cc
+ LOCAL_CFLAGS := -Werror -Wall
+ LOCAL_CPPFLAGS := -std=gnu++11 -fvisibility=protected
+-LOCAL_LDFLAGS := -ldl
++LOCAL_LDFLAGS := -Wl,--no-as-needed -ldl
+ LOCAL_MULTILIB := both
+ 
+ include $(BUILD_HOST_SHARED_LIBRARY)
+diff --git a/libnativebridge/native_bridge.cc b/libnativebridge/native_bridge.cc
+index 3facedd..5108078 100644
+--- a/libnativebridge/native_bridge.cc
++++ b/libnativebridge/native_bridge.cc
+@@ -66,6 +66,7 @@ static const char* GetNativeBridgeStateString(NativeBridgeState state) {
+     case NativeBridgeState::kClosed:
+       return kClosedString;
+   }
++  return NULL;
+ }
+ 
+ // Current state of the native bridge.

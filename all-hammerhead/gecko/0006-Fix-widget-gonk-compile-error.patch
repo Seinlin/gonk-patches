@@ -77,7 +77,7 @@ index 598e489..4e5ff2d 100644
  ]
  
 -if CONFIG['ANDROID_VERSION'] == '19':
-+if CONFIG['ANDROID_VERSION'] in ('19', '20'):
++if CONFIG['ANDROID_VERSION'] in ('19', '21'):
      EXPORTS += [
          'GonkBufferQueueKK.h',
          'GonkConsumerBaseKK.h',
@@ -86,7 +86,7 @@ index 598e489..4e5ff2d 100644
  
  if CONFIG['MOZ_B2G_CAMERA'] or CONFIG['MOZ_OMX_DECODER'] or CONFIG['MOZ_WEBRTC']:
 -    if CONFIG['ANDROID_VERSION'] == '19':
-+    if CONFIG['ANDROID_VERSION'] in ('19', '20'):
++    if CONFIG['ANDROID_VERSION'] in ('19', '21'):
          SOURCES += [
              'GonkBufferQueueKK.cpp',
              'GonkConsumerBaseKK.cpp',
