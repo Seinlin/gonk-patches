@@ -47,7 +47,7 @@ diff --git a/core/disabled_modules.mk b/core/disabled_modules.mk
 index 994b969..4765ed2 100644
 --- a/core/disabled_modules.mk
 +++ b/core/disabled_modules.mk
-@@ -17,13 +17,27 @@ DISABLED_USER_MODULES := \
+@@ -17,13 +17,28 @@ DISABLED_USER_MODULES := \
  	interrupter \
  	binderAddInts \
  	libandroidfw \
@@ -73,6 +73,7 @@ index 994b969..4765ed2 100644
 +  libOpenMAXAL \
 +  libOpenSLES \
 +  libdrmclearkeyplugin \
++  lmkd \
  
  #libbacktrace
  #libutils \
