@@ -1,19 +1,5 @@
-From b30bde6fb0aa614592ac702db5383773cc13334c Mon Sep 17 00:00:00 2001
-From: Kai-Zhen Li <kli@mozilla.com>
-Date: Sat, 1 Nov 2014 00:38:47 +0800
-Subject: [PATCH] Fix widget gonk compile error
-
----
- widget/gonk/GeckoTouchDispatcher.cpp         | 4 ++++
- widget/gonk/GeckoTouchDispatcher.h           | 3 +++
- widget/gonk/GonkMemoryPressureMonitoring.cpp | 1 +
- widget/gonk/nativewindow/moz.build           | 4 ++--
- widget/gonk/nsClipboard.h                    | 3 +++
- widget/gonk/nsScreenManagerGonk.h            | 8 ++++++--
- 6 files changed, 19 insertions(+), 4 deletions(-)
-
 diff --git a/widget/gonk/GeckoTouchDispatcher.cpp b/widget/gonk/GeckoTouchDispatcher.cpp
-index 47ba24e..4b0fb44 100644
+index 46b0382..01ceba9 100644
 --- a/widget/gonk/GeckoTouchDispatcher.cpp
 +++ b/widget/gonk/GeckoTouchDispatcher.cpp
 @@ -19,7 +19,9 @@
@@ -26,7 +12,7 @@ index 47ba24e..4b0fb44 100644
  #include "base/basictypes.h"
  #include "gfxPrefs.h"
  #include "libui/Input.h"
-@@ -384,6 +386,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
+@@ -364,6 +366,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
    WidgetTouchEvent event = aMultiTouch.ToWidgetTouchEvent(nullptr);
    nsEventStatus status = nsWindow::DispatchInputEvent(event, &captured);
  
@@ -34,7 +20,7 @@ index 47ba24e..4b0fb44 100644
    if (mEnabledUniformityInfo && profiler_is_active()) {
      const char* touchAction = "Invalid";
      switch (aMultiTouch.mType) {
-@@ -403,6 +406,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
+@@ -383,6 +386,7 @@ GeckoTouchDispatcher::DispatchTouchEvent(MultiTouchInput& aMultiTouch)
      TouchDataPayload* payload = new TouchDataPayload(touchPoint);
      PROFILER_MARKER_PAYLOAD(touchAction, payload);
    }
@@ -43,7 +29,7 @@ index 47ba24e..4b0fb44 100644
    if (!captured && (aMultiTouch.mTouches.Length() == 1)) {
      bool forwardToChildren = status != nsEventStatus_eConsumeNoDefault;
 diff --git a/widget/gonk/GeckoTouchDispatcher.h b/widget/gonk/GeckoTouchDispatcher.h
-index 1fc0e24..7268b35 100644
+index d2766b9..4bb447c0 100644
 --- a/widget/gonk/GeckoTouchDispatcher.h
 +++ b/widget/gonk/GeckoTouchDispatcher.h
 @@ -49,6 +49,9 @@ public:
@@ -54,8 +40,8 @@ index 1fc0e24..7268b35 100644
 +  ~GeckoTouchDispatcher() {}
 +
  private:
-   int32_t InterpolateTouch(MultiTouchInput& aOutTouch, TimeStamp aSampleTime);
-   int32_t ExtrapolateTouch(MultiTouchInput& aOutTouch, TimeStamp aSampleTime);
+   void ResampleTouchMoves(MultiTouchInput& aOutTouch, TimeStamp vsyncTime);
+   void SendTouchEvent(MultiTouchInput& aData);
 diff --git a/widget/gonk/GonkMemoryPressureMonitoring.cpp b/widget/gonk/GonkMemoryPressureMonitoring.cpp
 index 949f36c..a3f57d03 100644
 --- a/widget/gonk/GonkMemoryPressureMonitoring.cpp
@@ -142,6 +128,3 @@ index fc2ab4f..c4851ef 100644
  };
  
  #endif /* nsScreenManagerGonk_h___ */
--- 
-1.9.1
-
