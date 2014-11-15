@@ -1,0 +1,93 @@
+From 813470d931f2ecfbb16c4ebdf205201e9964080f Mon Sep 17 00:00:00 2001
+From: Michael Vines <mvines@codeaurora.org>
+Date: Thu, 30 Oct 2014 22:07:20 -0700
+Subject: [PATCH] Relax seccomp filter for newer bionic
+
+Change-Id: If7b0286e187a92e886e48ee1ecea34cfcc43101d
+---
+ security/sandbox/linux/SandboxFilter.cpp | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/security/sandbox/linux/SandboxFilter.cpp b/security/sandbox/linux/SandboxFilter.cpp
+index 7fde58f..15d1ebb 100644
+--- a/security/sandbox/linux/SandboxFilter.cpp
++++ b/security/sandbox/linux/SandboxFilter.cpp
+@@ -107,16 +107,17 @@ SandboxFilterImplContent::Build() {
+ #if SYSCALL_EXISTS(mmap2)
+   Allow(SYSCALL(mmap2));
+ #else
+   Allow(SYSCALL(mmap));
+ #endif
+ 
+   Allow(SYSCALL(clock_gettime));
+   Allow(SYSCALL(epoll_wait));
++  Allow(SYSCALL(epoll_pwait));
+   Allow(SYSCALL(gettimeofday));
+   Allow(SYSCALL(read));
+   Allow(SYSCALL(write));
+   // 32-bit lseek is used, at least on Android, to implement ANSI fseek.
+ #if SYSCALL_EXISTS(_llseek)
+   Allow(SYSCALL(_llseek));
+ #endif
+   Allow(SYSCALL(lseek));
+@@ -143,16 +144,19 @@ SandboxFilterImplContent::Build() {
+   Allow(SYSCALL(getpid));
+   Allow(SYSCALL(gettid));
+   Allow(SYSCALL(getrusage));
+   Allow(SYSCALL(times));
+   Allow(SYSCALL(madvise));
+   Allow(SYSCALL(dup));
+   Allow(SYSCALL(nanosleep));
+   Allow(SYSCALL(poll));
++  Allow(SYSCALL(ppoll));
++  Allow(SYSCALL(openat));
++  Allow(SYSCALL(faccessat));
+   // select()'s arguments used to be passed by pointer as a struct.
+ #if SYSCALL_EXISTS(_newselect)
+   Allow(SYSCALL(_newselect));
+ #else
+   Allow(SYSCALL(select));
+ #endif
+   // Some archs used to have 16-bit uid/gid instead of 32-bit.
+ #if SYSCALL_EXISTS(getuid32)
+@@ -273,16 +277,19 @@ SandboxFilterImplContent::Build() {
+   Allow(SOCKETCALL(getpeername, GETPEERNAME));
+   Allow(SYSCALL(eventfd2));
+   Allow(SYSCALL(clock_getres));
+   Allow(SYSCALL(sysinfo));
+   Allow(SYSCALL(getresuid));
+   Allow(SYSCALL(umask));
+   Allow(SYSCALL(getresgid));
+   Allow(SYSCALL(poll));
++  Allow(SYSCALL(ppoll));
++  Allow(SYSCALL(openat));
++  Allow(SYSCALL(faccessat));
+   Allow(SYSCALL(inotify_init1));
+   Allow(SYSCALL(wait4));
+   Allow(SYSVIPCCALL(shmctl, SHMCTL));
+   Allow(SYSCALL(set_robust_list));
+   Allow(SYSCALL(rmdir));
+   Allow(SOCKETCALL(recvfrom, RECVFROM));
+   Allow(SYSVIPCCALL(shmdt, SHMDT));
+   Allow(SYSCALL(pipe2));
+@@ -332,16 +339,17 @@ void SandboxFilterImplGMP::Build() {
+ 
+   Allow(SYSCALL_WITH_ARG(clock_gettime, 0, CLOCK_MONOTONIC, CLOCK_REALTIME));
+   Allow(SYSCALL(futex));
+   Allow(SYSCALL(gettimeofday));
+   Allow(SYSCALL(poll));
+   Allow(SYSCALL(write));
+   Allow(SYSCALL(read));
+   Allow(SYSCALL(epoll_wait));
++  Allow(SYSCALL(epoll_pwait));
+   Allow(SOCKETCALL(recvmsg, RECVMSG));
+   Allow(SOCKETCALL(sendmsg, SENDMSG));
+   Allow(SYSCALL(time));
+ 
+   // Nothing after this line is performance-critical.
+ 
+ #if SYSCALL_EXISTS(mmap2)
+   Allow(SYSCALL(mmap2));
+-- 
+1.8.2.1
+

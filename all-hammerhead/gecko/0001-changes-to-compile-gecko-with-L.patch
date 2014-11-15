@@ -1,0 +1,399 @@
+diff --git a/b2g/app/moz.build b/b2g/app/moz.build
+index d2c2e6b..31fe3ad 100644
+--- a/b2g/app/moz.build
++++ b/b2g/app/moz.build
+@@ -58,7 +58,7 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk':
+         'cutils',
+     ]
+     OS_LIBS += CONFIG['MOZ_ZLIB_LIBS']
+-    if CONFIG['ANDROID_VERSION'] in ('17', '18', '19'):
++    if CONFIG['ANDROID_VERSION'] in ('17', '18', '19', '21'):
+         OS_LIBS += [
+             'gui',
+             'suspend',
+diff --git a/build/gyp.mozbuild b/build/gyp.mozbuild
+index 950804a..41dbbc6 100644
+--- a/build/gyp.mozbuild
++++ b/build/gyp.mozbuild
+@@ -73,7 +73,7 @@ elif os == 'Android':
+         gyp_vars['build_with_gonk'] = 1
+         gyp_vars['moz_widget_toolkit_gonk'] = 1
+         gyp_vars['opus_complexity'] = 1
+-        if int(CONFIG['ANDROID_VERSION']) >= 18:
++        if int(CONFIG['ANDROID_VERSION']) == 18:
+           gyp_vars['moz_webrtc_omx'] = 1
+     else:
+         gyp_vars.update(
+diff --git a/config/external/nss/Makefile.in b/config/external/nss/Makefile.in
+index 63944de..d64e7c6 100644
+--- a/config/external/nss/Makefile.in
++++ b/config/external/nss/Makefile.in
+@@ -212,7 +212,8 @@ DEFAULT_GMAKE_FLAGS += \
+ 	OS_PTHREAD= \
+ 	$(NULL)
+ 
+-DEFAULT_GMAKE_FLAGS += ARCHFLAG='$(CFLAGS) -DCHECK_FORK_GETPID -DRTLD_NOLOAD=0 -include $(topsrcdir)/security/manager/android_stub.h'
++# XXX: Need a way to define RTLD_NOLOAD for Android version < 21
++DEFAULT_GMAKE_FLAGS += ARCHFLAG='$(CFLAGS) -DCHECK_FORK_GETPID -include $(topsrcdir)/security/manager/android_stub.h'
+ endif
+ endif
+ 
+diff --git a/configure.in b/configure.in
+index ff95391..b22d8c5 100644
+--- a/configure.in
++++ b/configure.in
+@@ -291,6 +291,12 @@ if test -n "$gonkdir" ; then
+         AC_DEFINE(MOZ_AUDIO_OFFLOAD)
+ 	MOZ_FMP4=1
+         ;;
++    21)
++        GONK_INCLUDES="-I$gonkdir/frameworks/native/include -I$gonkdir/frameworks/av/include -I$gonkdir/frameworks/av/include/media -I$gonkdir/frameworks/av/include/camera -I$gonkdir/frameworks/native/include/media/openmax -I$gonkdir/frameworks/av/media/libstagefright/include -I$gonkdir/bionic/libc/kernel/uapi -I$gonkdir/bionic/libc/kernel/uapi/asm-arm"
++        MOZ_AUDIO_OFFLOAD=1
++        AC_SUBST(MOZ_AUDIO_OFFLOAD)
++        AC_DEFINE(MOZ_AUDIO_OFFLOAD)
++        ;;
+     *)
+         AC_MSG_ERROR([Unsupported platform version: $ANDROID_VERSION])
+         ;;
+@@ -3400,7 +3406,7 @@ for file in $MALLOC_HEADERS; do
+   fi
+ done
+ 
+-AC_CHECK_FUNCS(strndup posix_memalign memalign valloc)
++AC_CHECK_FUNCS(strndup posix_memalign memalign)
+ 
+ AC_CHECK_FUNCS(malloc_usable_size)
+ 
+diff --git a/dom/system/gonk/systemlibs.js b/dom/system/gonk/systemlibs.js
+index b76822f..1435396 100644
+--- a/dom/system/gonk/systemlibs.js
++++ b/dom/system/gonk/systemlibs.js
+@@ -129,6 +129,8 @@ this.libnetutils = (function() {
+     ifc_disable: library.declare("ifc_disable", ctypes.default_abi,
+                                  ctypes.int,
+                                  ctypes.char.ptr),
++    /* this is removed in L release
++     * need to use ifc_add_route instead
+     ifc_add_host_route: library.declare("ifc_add_host_route",
+                                         ctypes.default_abi,
+                                         ctypes.int,
+@@ -147,6 +149,7 @@ this.libnetutils = (function() {
+                                            ctypes.default_abi,
+                                            ctypes.int,
+                                            ctypes.char.ptr),
++    */
+     ifc_remove_default_route: library.declare("ifc_remove_default_route",
+                                               ctypes.default_abi,
+                                               ctypes.int,
+@@ -159,6 +162,7 @@ this.libnetutils = (function() {
+                                    ctypes.int,
+                                    ctypes.int,
+                                    ctypes.int),
++    /*
+     ifc_add_route: library.declare("ifc_add_route", ctypes.default_abi,
+                                    ctypes.int, // return value
+                                    ctypes.char.ptr, // ifname
+@@ -171,6 +175,7 @@ this.libnetutils = (function() {
+                                       ctypes.char.ptr, // dst
+                                       ctypes.int, // prefix_length
+                                       ctypes.char.ptr), // gw
++    */
+     dhcp_stop: library.declare("dhcp_stop", ctypes.default_abi,
+                                ctypes.int,
+                                ctypes.char.ptr),
+diff --git a/hal/gonk/GonkHal.cpp b/hal/gonk/GonkHal.cpp
+index fa7c627..518c2ea 100644
+--- a/hal/gonk/GonkHal.cpp
++++ b/hal/gonk/GonkHal.cpp
+@@ -27,7 +27,7 @@
+ #include <sys/syscall.h>
+ #include <sys/resource.h>
+ #include <time.h>
+-#include <asm/page.h>
++#include <limits.h>
+ 
+ #include "mozilla/DebugOnly.h"
+ 
+diff --git a/ipc/keystore/KeyStore.cpp b/ipc/keystore/KeyStore.cpp
+index 6cf1068..712fac4 100644
+--- a/ipc/keystore/KeyStore.cpp
++++ b/ipc/keystore/KeyStore.cpp
+@@ -69,7 +69,13 @@ public:
+   virtual int64_t getmtime(const String16& name) {return 0;}
+   virtual int32_t duplicate(const String16& srcKey, int32_t srcUid, const String16& destKey, int32_t destUid) {return 0;}
+   virtual int32_t clear_uid(int64_t uid) {return 0;}
+-#if ANDROID_VERSION == 18
++#if ANDROID_VERSION >= 21
++  virtual int32_t generate(const String16& name, int32_t uid, int32_t keyType, int32_t keySize, int32_t flags, Vector<sp<KeystoreArg> >* args) {return 0;}
++  virtual int32_t is_hardware_backed(const String16& keyType) {return 0;}
++  virtual int32_t reset_uid(int32_t uid) {return 0;}
++  virtual int32_t sync_uid(int32_t sourceUid, int32_t targetUid) {return 0;}
++  virtual int32_t password_uid(const String16& password, int32_t uid) {return 0;}
++#elif ANDROID_VERSION == 18
+   virtual int32_t generate(const String16& name, int uid, int32_t flags) {return 0;}
+   virtual int32_t is_hardware_backed() {return 0;}
+ #else
+@@ -156,7 +162,13 @@ public:
+   int64_t getmtime(const String16& name) {return ::UNDEFINED_ACTION;}
+   int32_t duplicate(const String16& srcKey, int32_t srcUid, const String16& destKey, int32_t destUid) {return ::UNDEFINED_ACTION;}
+   int32_t clear_uid(int64_t uid) {return ::UNDEFINED_ACTION;}
+-#if ANDROID_VERSION == 18
++#if ANDROID_VERSION >= 21
++  virtual int32_t generate(const String16& name, int32_t uid, int32_t keyType, int32_t keySize, int32_t flags, Vector<sp<KeystoreArg> >* args) {return ::UNDEFINED_ACTION;}
++  virtual int32_t is_hardware_backed(const String16& keyType) {return ::UNDEFINED_ACTION;}
++  virtual int32_t reset_uid(int32_t uid) {return ::UNDEFINED_ACTION;;}
++  virtual int32_t sync_uid(int32_t sourceUid, int32_t targetUid) {return ::UNDEFINED_ACTION;}
++  virtual int32_t password_uid(const String16& password, int32_t uid) {return ::UNDEFINED_ACTION;}
++#elif ANDROID_VERSION == 18
+   virtual int32_t generate(const String16& name, int uid, int32_t flags) {return ::UNDEFINED_ACTION;}
+   virtual int32_t is_hardware_backed() {return ::UNDEFINED_ACTION;}
+ #else
+diff --git a/js/src/configure.in b/js/src/configure.in
+index 690e5c8..c13e920 100644
+--- a/js/src/configure.in
++++ b/js/src/configure.in
+@@ -217,7 +217,7 @@ if test -n "$gonkdir" ; then
+         ;;
+     esac
+ 
+-    CPPFLAGS="-DANDROID -isystem $gonkdir/bionic/libc/$ARCH_DIR/include -isystem $gonkdir/bionic/libc/include/ -isystem $gonkdir/bionic/libc/kernel/common -isystem $gonkdir/bionic/libc/kernel/$ARCH_DIR -isystem $gonkdir/bionic/libm/include -I$gonkdir/frameworks/base/native/include -I$gonkdir/system/core/include -isystem $gonkdir/bionic $CPPFLAGS -I$gonkdir/external/valgrind/fxos-include"
++    CPPFLAGS="-DANDROID -isystem $gonkdir/bionic/libc/$ARCH_DIR/include -isystem $gonkdir/bionic/libc/include/ -isystem $gonkdir/bionic/libc/kernel/common -isystem $gonkdir/bionic/libc/kernel/$ARCH_DIR -isystem $gonkdir/bionic/libm/include -I$gonkdir/frameworks/base/native/include -I$gonkdir/system/core/include -isystem $gonkdir/bionic $CPPFLAGS -I$gonkdir/external/valgrind/fxos-include -I$gonkdir/bionic/libc/kernel/uapi -I$gonkdir/bionic/libc/kernel/uapi/asm-arm"
+     CFLAGS="-mandroid -fno-short-enums -fno-exceptions $CFLAGS"
+     CXXFLAGS="-mandroid -fno-short-enums -fno-exceptions -Wno-psabi $CXXFLAGS $STLPORT_CPPFLAGS"
+     LIBS="$LIBS $STLPORT_LIBS"
+diff --git a/js/src/jsutil.cpp b/js/src/jsutil.cpp
+index c6eda2c..175e154 100644
+--- a/js/src/jsutil.cpp
++++ b/js/src/jsutil.cpp
+@@ -75,7 +75,7 @@ AllTheNonBasicVanillaNewAllocations()
+         intptr_t(memalign(16, 16)) +
+         //intptr_t(q) +
+         //intptr_t(aligned_alloc(16, 16)) +
+-        intptr_t(valloc(4096)) +
++        //intptr_t(valloc(4096)) +
+         intptr_t(strdup("dummy"));
+ 
+     printf("%u\n", uint32_t(p));  // make sure |p| is not optimized away
+diff --git a/media/libopus/moz.build b/media/libopus/moz.build
+index 2607a19..da9489f 100644
+--- a/media/libopus/moz.build
++++ b/media/libopus/moz.build
+@@ -89,13 +89,14 @@ if CONFIG['CPU_ARCH'] == 'arm' and CONFIG['GNU_AS']:
+         'celt_pitch_xcorr_arm-gnu',
+     ]]
+     # -Os is significantly slower, enable -O3 unless optimization is disabled
+-    if CONFIG['MOZ_OPTIMIZE']:
+-      CFLAGS += [
+-        '-O3',
+-      ]
+-      CXXFLAGS += [
+-        '-O3',
+-      ]
++    # O3 is causing compilation error: https://gcc.gnu.org/ml/gcc-bugs/2013-09/msg00827.html
++    #if CONFIG['MOZ_OPTIMIZE']:
++    #  CFLAGS += [
++    #    '-O3',
++    #  ]
++    #  CXXFLAGS += [
++    #    '-O3',
++    #  ]
+ 
+ # Suppress warnings in third-party code.
+ if CONFIG['GNU_CC']:
+diff --git a/mozglue/build/BionicGlue.cpp b/mozglue/build/BionicGlue.cpp
+index ec4ec6a..18d1796 100644
+--- a/mozglue/build/BionicGlue.cpp
++++ b/mozglue/build/BionicGlue.cpp
+@@ -162,11 +162,19 @@ __wrap_PR_GetEnv(const char *var)
+ }
+ 
+ extern "C" NS_EXPORT int
++#if ANDROID_VERSION >= 21
++__wrap_PR_SetEnv(char *string)
++#else
+ __wrap_PR_SetEnv(const char *string)
++#endif
+ {
+     int result;
+ 
++#if ANDROID_VERSION >= 21
++    if ( !strchr((const char*)string, '=')) return(-1);
++#else
+     if ( !strchr(string, '=')) return(-1);
++#endif
+ 
+     pthread_mutex_lock(&_pr_envLock);
+     result = putenv(string);
+diff --git a/mozglue/build/Nuwa.cpp b/mozglue/build/Nuwa.cpp
+index 59a4e8a..b575e3e 100644
+--- a/mozglue/build/Nuwa.cpp
++++ b/mozglue/build/Nuwa.cpp
+@@ -59,10 +59,12 @@ int __real_pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mtx);
+ int __real_pthread_cond_timedwait(pthread_cond_t *cond,
+                                   pthread_mutex_t *mtx,
+                                   const struct timespec *abstime);
++#if ANDROID_VERSION < 21
+ int __real___pthread_cond_timedwait(pthread_cond_t *cond,
+                                     pthread_mutex_t *mtx,
+                                     const struct timespec *abstime,
+                                     clockid_t clock);
++#endif
+ int __real_pthread_mutex_lock(pthread_mutex_t *mtx);
+ int __real_poll(struct pollfd *fds, nfds_t nfds, int timeout);
+ int __real_epoll_create(int size);
+@@ -1102,6 +1104,7 @@ __wrap_pthread_cond_timedwait(pthread_cond_t *cond,
+   return rv;
+ }
+ 
++#if ANDROID_VERSION < 21
+ extern "C" int __pthread_cond_timedwait(pthread_cond_t *cond,
+                                         pthread_mutex_t *mtx,
+                                         const struct timespec *abstime,
+@@ -1143,6 +1146,7 @@ __wrap___pthread_cond_timedwait(pthread_cond_t *cond,
+ 
+   return rv;
+ }
++#endif
+ 
+ extern "C" MFBT_API int
+ __wrap_pthread_mutex_lock(pthread_mutex_t *mtx) {
+diff --git a/security/nss/lib/freebl/unix_rand.c b/security/nss/lib/freebl/unix_rand.c
+index 579040ee..99477a0 100644
+--- a/security/nss/lib/freebl/unix_rand.c
++++ b/security/nss/lib/freebl/unix_rand.c
+@@ -735,7 +735,14 @@ safe_popen(char *cmd)
+ 	 */
+ 	if (!freopen("/dev/null", "r", stdin))
+ 	    close(0);
++#if defined(HAVE_SYSCONF) && defined(_SC_OPEN_MAX)
++	ndesc = sysconf(_SC_OPEN_MAX);
++#elif defined(HAVE_GETDTABLESIZE)
+ 	ndesc = getdtablesize();
++#else
++  //#warning Using default value
++  ndesc = 123;
++#endif
+ 	for (fd = PR_MIN(65536, ndesc); --fd > 2; close(fd));
+ 
+ 	/* clean up environment in the child process */
+diff --git a/toolkit/mozapps/update/updater/updater.cpp b/toolkit/mozapps/update/updater/updater.cpp
+index 2b198b2..87b64d6 100644
+--- a/toolkit/mozapps/update/updater/updater.cpp
++++ b/toolkit/mozapps/update/updater/updater.cpp
+@@ -2388,11 +2388,13 @@ int NS_main(int argc, NS_tchar **argv)
+       if (setpriority(PRIO_PROCESS, 0, prioVal)) {
+         LOG(("setpriority(%d) failed, errno = %d", prioVal, errno));
+       }
++#if ANDROID_VERSION < 21
+       if (ioprio_set(IOPRIO_WHO_PROCESS, 0,
+                      IOPRIO_PRIO_VALUE(ioprioClass, ioprioLevel))) {
+         LOG(("ioprio_set(%d,%d) failed: errno = %d",
+              ioprioClass, ioprioLevel, errno));
+       }
++#endif
+       FILE *fs = fopen("/proc/self/oom_score_adj", "w");
+       if (fs) {
+         fprintf(fs, "%d", oomScoreAdj);
+diff --git a/tools/profiler/moz.build b/tools/profiler/moz.build
+index f2133bc..89da893 100644
+--- a/tools/profiler/moz.build
++++ b/tools/profiler/moz.build
+@@ -100,7 +100,7 @@ if CONFIG['MOZ_ENABLE_PROFILER_SPS']:
+     if CONFIG['ENABLE_TESTS']:
+         DIRS += ['tests/gtest']
+ 
+-    if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk' and CONFIG['ANDROID_VERSION'] <= '17':
++    if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk' and (CONFIG['ANDROID_VERSION'] <= '17' or CONFIG['ANDROID_VERSION'] >= '21'):
+         DEFINES['ELFSIZE'] = 32
+ 
+     FINAL_LIBRARY = 'xul'
+diff --git a/widget/gonk/libdisplay/FramebufferSurface.cpp b/widget/gonk/libdisplay/FramebufferSurface.cpp
+index 6f2b8ad..d9ed0d6 100644
+--- a/widget/gonk/libdisplay/FramebufferSurface.cpp
++++ b/widget/gonk/libdisplay/FramebufferSurface.cpp
+@@ -49,6 +49,24 @@ namespace android {
+  * This implements the (main) framebuffer management. This class
+  * was adapted from the version in SurfaceFlinger
+  */
++#if ANDROID_VERSION >= 21
++FramebufferSurface::FramebufferSurface(int disp, uint32_t width, uint32_t height, uint32_t format, const sp<IGraphicBufferConsumer>& consumer) :
++    ConsumerBase(consumer, true),
++    mDisplayType(disp),
++    mCurrentBufferSlot(-1),
++    mCurrentBuffer(0),
++    lastHandle(0)
++{
++    mName = "FramebufferSurface";
++    mConsumer->setConsumerName(mName);
++    mConsumer->setConsumerUsageBits(GRALLOC_USAGE_HW_FB |
++                                   GRALLOC_USAGE_HW_RENDER |
++                                   GRALLOC_USAGE_HW_COMPOSER);
++    mConsumer->setDefaultBufferFormat(format);
++    mConsumer->setDefaultBufferSize(width, height);
++    mConsumer->setDefaultMaxBufferCount(NUM_FRAMEBUFFER_SURFACE_BUFFERS);
++}
++#else // ANDROID_VERSION >= 21
+ FramebufferSurface::FramebufferSurface(int disp, uint32_t width, uint32_t height, uint32_t format,
+         sp<BufferQueue>& bq) :
+ #if ANDROID_VERSION >= 19
+@@ -77,6 +95,7 @@ FramebufferSurface::FramebufferSurface(int disp, uint32_t width, uint32_t height
+     consumer->setDefaultBufferSize(width, height);
+     consumer->setDefaultMaxBufferCount(NUM_FRAMEBUFFER_SURFACE_BUFFERS);
+ }
++#endif // #if ANDROID_VERSION >= 21
+ 
+ status_t FramebufferSurface::nextBuffer(sp<GraphicBuffer>& outBuffer, sp<Fence>& outFence) {
+     Mutex::Autolock lock(mMutex);
+@@ -113,7 +132,7 @@ status_t FramebufferSurface::nextBuffer(sp<GraphicBuffer>& outBuffer, sp<Fence>&
+         err = releaseBufferLocked(mCurrentBufferSlot, EGL_NO_DISPLAY,
+                 EGL_NO_SYNC_KHR);
+ #endif
+-        if (err != NO_ERROR && err != BufferQueue::STALE_BUFFER_SLOT) {
++        if (err != NO_ERROR && err != IGraphicBufferConsumer::STALE_BUFFER_SLOT) {
+             ALOGE("error releasing buffer: %s (%d)", strerror(-err), err);
+             return err;
+         }
+diff --git a/widget/gonk/libdisplay/FramebufferSurface.h b/widget/gonk/libdisplay/FramebufferSurface.h
+index 640ea3f..0cf4cce 100644
+--- a/widget/gonk/libdisplay/FramebufferSurface.h
++++ b/widget/gonk/libdisplay/FramebufferSurface.h
+@@ -34,7 +34,11 @@ class HWComposer;
+ 
+ class FramebufferSurface : public ConsumerBase {
+ public:
++#if ANDROID_VERSION >= 21
++    FramebufferSurface(int disp, uint32_t width, uint32_t height, uint32_t format, const sp<IGraphicBufferConsumer>& consumer);
++#else
+     FramebufferSurface(int disp, uint32_t width, uint32_t height, uint32_t format, sp<BufferQueue>& bq);
++#endif
+ 
+     bool isUpdateOnDemand() const { return false; }
+     status_t setUpdateRectangle(const Rect& updateRect);
+diff --git a/widget/gonk/libdisplay/GonkDisplayJB.cpp b/widget/gonk/libdisplay/GonkDisplayJB.cpp
+index 7b540f9..f2faa1a 100644
+--- a/widget/gonk/libdisplay/GonkDisplayJB.cpp
++++ b/widget/gonk/libdisplay/GonkDisplayJB.cpp
+@@ -106,7 +106,14 @@ GonkDisplayJB::GonkDisplayJB()
+     mAlloc = new GraphicBufferAlloc();
+ 
+     status_t error;
+-
++#if ANDROID_VERSION >= 21
++    sp<IGraphicBufferProducer> producer;
++    sp<IGraphicBufferConsumer> consumer;
++    BufferQueue::createBufferQueue(&producer, &consumer,
++                    mAlloc);
++    mFBSurface = new FramebufferSurface(0, mWidth, mHeight, surfaceformat, consumer);
++    sp<Surface> stc = new Surface(producer);
++#else // ANDROID_VERSION >= 21
+ #if ANDROID_VERSION >= 19
+     sp<BufferQueue> bq = new BufferQueue(mAlloc);
+ #else
+@@ -119,6 +126,7 @@ GonkDisplayJB::GonkDisplayJB()
+ #else
+     sp<Surface> stc = new Surface(static_cast<sp<IGraphicBufferProducer> >(bq));
+ #endif
++#endif // ANDROID_VERSION >= 21
+     mSTClient = stc;
+     mSTClient->perform(mSTClient.get(), NATIVE_WINDOW_SET_BUFFER_COUNT, 2);
+     mSTClient->perform(mSTClient.get(), NATIVE_WINDOW_SET_USAGE, GRALLOC_USAGE_HW_FB | GRALLOC_USAGE_HW_RENDER | GRALLOC_USAGE_HW_COMPOSER);
