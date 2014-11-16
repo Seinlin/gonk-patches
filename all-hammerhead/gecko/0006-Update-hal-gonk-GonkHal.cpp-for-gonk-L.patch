@@ -1,0 +1,25 @@
+From 3ecde9578a69de3c1a72fa1652e9163b5db3194c Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Sun, 16 Nov 2014 23:21:06 +0800
+Subject: [PATCH 06/14] Update hal/gonk/GonkHal.cpp for gonk-L.
+
+---
+ hal/gonk/GonkHal.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hal/gonk/GonkHal.cpp b/hal/gonk/GonkHal.cpp
+index fa7c627..518c2ea 100644
+--- a/hal/gonk/GonkHal.cpp
++++ b/hal/gonk/GonkHal.cpp
+@@ -27,7 +27,7 @@
+ #include <sys/syscall.h>
+ #include <sys/resource.h>
+ #include <time.h>
+-#include <asm/page.h>
++#include <limits.h>
+ 
+ #include "mozilla/DebugOnly.h"
+ 
+-- 
+1.9.1
+

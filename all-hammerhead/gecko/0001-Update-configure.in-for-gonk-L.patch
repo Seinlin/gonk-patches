@@ -1,0 +1,38 @@
+From a6eab073eac4a4c23a5c3b991363e98599b6d835 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Sun, 16 Nov 2014 23:19:19 +0800
+Subject: [PATCH 01/14] Update configure.in for gonk-L.
+
+---
+ configure.in | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/configure.in b/configure.in
+index 94d136b..abca08a 100644
+--- a/configure.in
++++ b/configure.in
+@@ -291,6 +291,12 @@ if test -n "$gonkdir" ; then
+         AC_DEFINE(MOZ_AUDIO_OFFLOAD)
+ 	MOZ_FMP4=1
+         ;;
++    21)
++        GONK_INCLUDES="-I$gonkdir/frameworks/native/include -I$gonkdir/frameworks/av/include -I$gonkdir/frameworks/av/include/media -I$gonkdir/frameworks/av/include/camera -I$gonkdir/frameworks/native/include/media/openmax -I$gonkdir/frameworks/av/media/libstagefright/include -I$gonkdir/bionic/libc/kernel/uapi -I$gonkdir/bionic/libc/kernel/uapi/asm-arm"
++        MOZ_AUDIO_OFFLOAD=1
++        AC_SUBST(MOZ_AUDIO_OFFLOAD)
++        AC_DEFINE(MOZ_AUDIO_OFFLOAD)
++        ;;
+     *)
+         AC_MSG_ERROR([Unsupported platform version: $ANDROID_VERSION])
+         ;;
+@@ -3406,7 +3412,7 @@ for file in $MALLOC_HEADERS; do
+   fi
+ done
+ 
+-AC_CHECK_FUNCS(strndup posix_memalign memalign valloc)
++AC_CHECK_FUNCS(strndup posix_memalign memalign)
+ 
+ AC_CHECK_FUNCS(malloc_usable_size)
+ 
+-- 
+1.9.1
+

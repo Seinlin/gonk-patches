@@ -1,0 +1,25 @@
+From 48c1a8ddc803d03264796c5e9d7352dc962caa19 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Sun, 16 Nov 2014 23:19:58 +0800
+Subject: [PATCH 02/14] Update b2g/app/moz.build for gonk-L.
+
+---
+ b2g/app/moz.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/b2g/app/moz.build b/b2g/app/moz.build
+index d2c2e6b..31fe3ad 100644
+--- a/b2g/app/moz.build
++++ b/b2g/app/moz.build
+@@ -58,7 +58,7 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk':
+         'cutils',
+     ]
+     OS_LIBS += CONFIG['MOZ_ZLIB_LIBS']
+-    if CONFIG['ANDROID_VERSION'] in ('17', '18', '19'):
++    if CONFIG['ANDROID_VERSION'] in ('17', '18', '19', '21'):
+         OS_LIBS += [
+             'gui',
+             'suspend',
+-- 
+1.9.1
+

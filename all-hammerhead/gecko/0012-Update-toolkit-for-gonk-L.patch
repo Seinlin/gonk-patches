@@ -1,0 +1,30 @@
+From ba5ef924c9ee9a64d8ec8dfcf6fd1f23bb3747ac Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Sun, 16 Nov 2014 23:22:47 +0800
+Subject: [PATCH 12/14] Update toolkit/ for gonk-L.
+
+---
+ toolkit/mozapps/update/updater/updater.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/toolkit/mozapps/update/updater/updater.cpp b/toolkit/mozapps/update/updater/updater.cpp
+index 2b198b2..87b64d6 100644
+--- a/toolkit/mozapps/update/updater/updater.cpp
++++ b/toolkit/mozapps/update/updater/updater.cpp
+@@ -2388,11 +2388,13 @@ int NS_main(int argc, NS_tchar **argv)
+       if (setpriority(PRIO_PROCESS, 0, prioVal)) {
+         LOG(("setpriority(%d) failed, errno = %d", prioVal, errno));
+       }
++#if ANDROID_VERSION < 21
+       if (ioprio_set(IOPRIO_WHO_PROCESS, 0,
+                      IOPRIO_PRIO_VALUE(ioprioClass, ioprioLevel))) {
+         LOG(("ioprio_set(%d,%d) failed: errno = %d",
+              ioprioClass, ioprioLevel, errno));
+       }
++#endif
+       FILE *fs = fopen("/proc/self/oom_score_adj", "w");
+       if (fs) {
+         fprintf(fs, "%d", oomScoreAdj);
+-- 
+1.9.1
+

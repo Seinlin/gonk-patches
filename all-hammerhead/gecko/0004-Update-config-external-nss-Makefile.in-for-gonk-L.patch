@@ -1,0 +1,26 @@
+From 2800921bcfaca3c8535383867eed092295171250 Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Sun, 16 Nov 2014 23:20:32 +0800
+Subject: [PATCH 04/14] Update config/external/nss/Makefile.in for gonk-L.
+
+---
+ config/external/nss/Makefile.in | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/config/external/nss/Makefile.in b/config/external/nss/Makefile.in
+index 63944de..d64e7c6 100644
+--- a/config/external/nss/Makefile.in
++++ b/config/external/nss/Makefile.in
+@@ -212,7 +212,8 @@ DEFAULT_GMAKE_FLAGS += \
+ 	OS_PTHREAD= \
+ 	$(NULL)
+ 
+-DEFAULT_GMAKE_FLAGS += ARCHFLAG='$(CFLAGS) -DCHECK_FORK_GETPID -DRTLD_NOLOAD=0 -include $(topsrcdir)/security/manager/android_stub.h'
++# XXX: Need a way to define RTLD_NOLOAD for Android version < 21
++DEFAULT_GMAKE_FLAGS += ARCHFLAG='$(CFLAGS) -DCHECK_FORK_GETPID -include $(topsrcdir)/security/manager/android_stub.h'
+ endif
+ endif
+ 
+-- 
+1.9.1
+
