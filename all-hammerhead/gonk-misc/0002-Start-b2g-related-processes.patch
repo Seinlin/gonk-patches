@@ -1,0 +1,14 @@
+diff --git a/init.b2g.rc b/init.b2g.rc
+index c06b309..080bc62 100644
+--- a/init.b2g.rc
++++ b/init.b2g.rc
+@@ -30,3 +30,9 @@ on boot
+     # Hard limit keeps default value(4096).
+     setrlimit 7 2048 4096
+     write /proc/sys/net/ipv6/conf/default/use_tempaddr 2
++    start gonksched
++    start fakeappops
++    start rilproxy
++    start media
++    start nfcd
++    start b2g
