@@ -1,0 +1,69 @@
+From bd405ef28e5e4d09f5ec30ee574ac46bec953d3e Mon Sep 17 00:00:00 2001
+From: John Lin <jolin@mozilla.com>
+Date: Fri, 14 Nov 2014 18:29:48 +0800
+Subject: [PATCH] Deprecate CARBON API.
+
+---
+ adb/get_my_path_darwin.c |  5 ++++-
+ fastboot/util_osx.c      | 20 ++++++++++++++++++--
+ 2 files changed, 22 insertions(+), 3 deletions(-)
+
+diff --git a/adb/get_my_path_darwin.c b/adb/get_my_path_darwin.c
+index 5b95d15..163e92d 100644
+--- a/adb/get_my_path_darwin.c
++++ b/adb/get_my_path_darwin.c
+@@ -14,6 +14,9 @@
+  * limitations under the License.
+  */
+ 
++#ifdef CARBON_GET_CURRENT_PROCESS_DEPRECATED
++#include "get_my_path_freebsd.c"
++#else
+ #import <Carbon/Carbon.h>
+ #include <unistd.h>
+ 
+@@ -27,4 +30,4 @@ void get_my_path(char *s, size_t maxLen)
+                 CFSTR("CFBundleExecutable"));
+     CFStringGetCString(value, s, maxLen, kCFStringEncodingUTF8);
+ }
+-
++#endif
+diff --git a/fastboot/util_osx.c b/fastboot/util_osx.c
+index 26b832a..fc7e4fe 100644
+--- a/fastboot/util_osx.c
++++ b/fastboot/util_osx.c
+@@ -25,7 +25,24 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
++#ifdef CARBON_GET_CURRENT_PROCESS_DEPRECATED
++#include <sys/types.h>
++#include <unistd.h>
++#include <limits.h>
++#include <stdio.h>
++
++void
++get_my_path(char *exe, size_t maxLen)
++{
++    char proc[64];
++
++    snprintf(proc, sizeof(proc), "/proc/%d/file", getpid());
+ 
++    int err = readlink(proc, exe, maxLen - 1);
++
++    exe[err > 0 ? err : 0] = '\0';
++}
++#else
+ #import <Carbon/Carbon.h>
+ #include <unistd.h>
+ 
+@@ -42,5 +59,4 @@ void get_my_path(char s[PATH_MAX])
+     x = strrchr(s, '/');
+     if(x) x[1] = 0;
+ }
+-
+-
++#endif
+-- 
+2.1.2
+
