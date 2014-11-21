@@ -16,7 +16,7 @@ index 950804a..41dbbc6 100644
          gyp_vars['moz_widget_toolkit_gonk'] = 1
          gyp_vars['opus_complexity'] = 1
 -        if int(CONFIG['ANDROID_VERSION']) >= 18:
-+        if int(CONFIG['ANDROID_VERSION']) == 18:
++        if CONFIG['ANDROID_VERSION'] in ('18', '19'):
            gyp_vars['moz_webrtc_omx'] = 1
      else:
          gyp_vars.update(

@@ -1,0 +1,24 @@
+diff --git a/configure.in b/configure.in
+index b2c833f..96d5be1 100644
+--- a/configure.in
++++ b/configure.in
+@@ -3886,7 +3886,9 @@ else
+ fi
+ MOZ_EME=1
+ MOZ_FFMPEG=
+-MOZ_WEBRTC=1
++if test -n "$MOZ_WEBRTC"; then
++  MOZ_WEBRTC=1
++fi
+ MOZ_PEERCONNECTION=
+ MOZ_SRTP=
+ MOZ_WEBRTC_SIGNALING=
+@@ -5351,7 +5353,7 @@ dnl ========================================================
+ dnl = Built-in fragmented MP4 support.
+ dnl ========================================================
+ 
+-if test "$OS_TARGET" = Android; then
++if test "$OS_TARGET" = Android -a x"$MOZ_WIDGET_TOOLKIT" != x"gonk"; then
+     MOZ_FMP4=1
+ fi
+ 
