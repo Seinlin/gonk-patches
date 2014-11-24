@@ -1,38 +1,35 @@
-From 7276d3a89283704cc6d4e4d15b0f3ef3f46fc674 Mon Sep 17 00:00:00 2001
-From: Kai-Zhen Li <kli@mozilla.com>
-Date: Sun, 16 Nov 2014 23:21:45 +0800
-Subject: [PATCH 09/14] Update media/libopus/moz.build for gonk-L.
-
----
- media/libopus/moz.build | 15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
-
 diff --git a/media/libopus/moz.build b/media/libopus/moz.build
-index 2607a19..da9489f 100644
+index 2607a19..55ddc40 100644
 --- a/media/libopus/moz.build
 +++ b/media/libopus/moz.build
-@@ -89,13 +89,14 @@ if CONFIG['CPU_ARCH'] == 'arm' and CONFIG['GNU_AS']:
+@@ -88,14 +88,23 @@ if CONFIG['CPU_ARCH'] == 'arm' and CONFIG['GNU_AS']:
+     GENERATED_SOURCES += [ '%s.%s' % (f, CONFIG['ASM_SUFFIX']) for f in [
          'celt_pitch_xcorr_arm-gnu',
      ]]
-     # -Os is significantly slower, enable -O3 unless optimization is disabled
--    if CONFIG['MOZ_OPTIMIZE']:
+-    # -Os is significantly slower, enable -O3 unless optimization is disabled
+     if CONFIG['MOZ_OPTIMIZE']:
 -      CFLAGS += [
 -        '-O3',
 -      ]
 -      CXXFLAGS += [
 -        '-O3',
 -      ]
-+    # O3 is causing compilation error: https://gcc.gnu.org/ml/gcc-bugs/2013-09/msg00827.html
-+    #if CONFIG['MOZ_OPTIMIZE']:
-+    #  CFLAGS += [
-+    #    '-O3',
-+    #  ]
-+    #  CXXFLAGS += [
-+    #    '-O3',
-+    #  ]
++      if CONFIG['ANDROID_VERSION'] >= '21':
++        # -O3 hit gcc bug in gonk-l, fallback to use -Os
++        CFLAGS += [
++          '-Os',
++        ]
++        CXXFLAGS += [
++          '-Os',
++        ]
++      else:
++        # -Os is significantly slower, enable -O3 unless optimization is disabled
++        CFLAGS += [
++          '-O3',
++        ]
++        CXXFLAGS += [
++          '-O3',
++        ]
  
  # Suppress warnings in third-party code.
  if CONFIG['GNU_CC']:
--- 
-1.9.1
-

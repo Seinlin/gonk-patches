@@ -1,17 +1,8 @@
-From 493d4c3c04377fada16f6891a4d36651cf780bb0 Mon Sep 17 00:00:00 2001
-From: Kai-Zhen Li <kli@mozilla.com>
-Date: Sun, 16 Nov 2014 23:22:58 +0800
-Subject: [PATCH 13/14] Update tools/ for gonk-L.
-
----
- tools/profiler/moz.build | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
 diff --git a/tools/profiler/moz.build b/tools/profiler/moz.build
-index f2133bc..89da893 100644
+index 4961d72..3cd031c 100644
 --- a/tools/profiler/moz.build
 +++ b/tools/profiler/moz.build
-@@ -100,7 +100,7 @@ if CONFIG['MOZ_ENABLE_PROFILER_SPS']:
+@@ -101,7 +101,7 @@ if CONFIG['MOZ_ENABLE_PROFILER_SPS']:
      if CONFIG['ENABLE_TESTS']:
          DIRS += ['tests/gtest']
  
@@ -20,6 +11,3 @@ index f2133bc..89da893 100644
          DEFINES['ELFSIZE'] = 32
  
      FINAL_LIBRARY = 'xul'
--- 
-1.9.1
-

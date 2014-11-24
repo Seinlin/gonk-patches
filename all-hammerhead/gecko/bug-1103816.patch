@@ -1,13 +1,18 @@
 diff --git a/security/manager/android_stub.h b/security/manager/android_stub.h
-index 9998953..a902b2e 100644
+index 9998953..165b22c 100644
 --- a/security/manager/android_stub.h
 +++ b/security/manager/android_stub.h
-@@ -17,4 +17,8 @@
+@@ -17,4 +17,13 @@
  
  #define sysinfo(foo) -1
  
 +#if ANDROID_VERSION < 21
 +#undef RTLD_NOLOAD
++#endif
++
++#if ANDROID_VERSION >= 21
++extern int getdtablesize(void);
++extern void* valloc(size_t byte_count) __mallocfunc __wur;
 +#endif
 +
  #endif /* ANDROID_STUB_H */

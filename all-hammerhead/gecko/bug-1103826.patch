@@ -1,15 +1,5 @@
-From 2fab85c42998cb8f8872e4bda05382e94979fd71 Mon Sep 17 00:00:00 2001
-From: Kai-Zhen Li <kli@mozilla.com>
-Date: Sun, 16 Nov 2014 23:21:33 +0800
-Subject: [PATCH 08/14] Update js/src/* for gonk-L.
-
----
- js/src/configure.in | 2 +-
- js/src/jsutil.cpp   | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
-
 diff --git a/js/src/configure.in b/js/src/configure.in
-index 17e1c71..cb2bd223 100644
+index 8f1d723..cd295ff 100644
 --- a/js/src/configure.in
 +++ b/js/src/configure.in
 @@ -217,7 +217,7 @@ if test -n "$gonkdir" ; then
@@ -21,19 +11,3 @@ index 17e1c71..cb2bd223 100644
      CFLAGS="-mandroid -fno-short-enums -fno-exceptions $CFLAGS"
      CXXFLAGS="-mandroid -fno-short-enums -fno-exceptions -Wno-psabi $CXXFLAGS $STLPORT_CPPFLAGS"
      LIBS="$LIBS $STLPORT_LIBS"
-diff --git a/js/src/jsutil.cpp b/js/src/jsutil.cpp
-index c6eda2c..175e154 100644
---- a/js/src/jsutil.cpp
-+++ b/js/src/jsutil.cpp
-@@ -75,7 +75,7 @@ AllTheNonBasicVanillaNewAllocations()
-         intptr_t(memalign(16, 16)) +
-         //intptr_t(q) +
-         //intptr_t(aligned_alloc(16, 16)) +
--        intptr_t(valloc(4096)) +
-+        //intptr_t(valloc(4096)) +
-         intptr_t(strdup("dummy"));
- 
-     printf("%u\n", uint32_t(p));  // make sure |p| is not optimized away
--- 
-1.9.1
-

@@ -1,0 +1,49 @@
+# HG changeset patch
+# User Kai-Zhen Li <kli@mozilla.com>
+# Date 1416796585 -28800
+#      Mon Nov 24 10:36:25 2014 +0800
+# Node ID ed264b8c9974d0747709eaa7caafafe1443b0551
+# Parent  8c02f3280d0c1c5b3140c96e8ce3a121a6456893
+Bug 1102266 - Add api level 21 for gonk-l. r=mwu
+
+diff --git a/configure.in b/configure.in
+--- a/configure.in
++++ b/configure.in
+@@ -291,6 +291,15 @@ if test -n "$gonkdir" ; then
+         AC_DEFINE(MOZ_AUDIO_OFFLOAD)
+ 	MOZ_FMP4=1
+         ;;
++    21)
++        GONK_INCLUDES="-I$gonkdir/frameworks/native/include -I$gonkdir/frameworks/av/include -I$gonkdir/frameworks/av/include/media -I$gonkdir/frameworks/av/include/camera -I$gonkdir/frameworks/native/include/media/openmax -I$gonkdir/frameworks/av/media/libstagefright/include -I$gonkdir/bionic/libc/kernel/uapi -I$gonkdir/bionic/libc/kernel/uapi/asm-arm"
++        MOZ_AUDIO_OFFLOAD=1
++        AC_SUBST(MOZ_AUDIO_OFFLOAD)
++        AC_DEFINE(MOZ_AUDIO_OFFLOAD)
++        # Disable fmp4 and webrtc before related bugs got fixed
++        MOZ_FMP4=
++        MOZ_WEBRTC=0
++        ;;
+     *)
+         AC_MSG_ERROR([Unsupported platform version: $ANDROID_VERSION])
+         ;;
+@@ -3876,7 +3885,11 @@ else
+ fi
+ MOZ_EME=1
+ MOZ_FFMPEG=
+-MOZ_WEBRTC=1
++if test x"$MOZ_WEBRTC" = x"0"; then
++  MOZ_WEBRTC=
++else
++  MOZ_WEBRTC=1
++fi
+ MOZ_PEERCONNECTION=
+ MOZ_SRTP=
+ MOZ_WEBRTC_SIGNALING=
+@@ -5341,7 +5354,7 @@ dnl ====================================
+ dnl = Built-in fragmented MP4 support.
+ dnl ========================================================
+ 
+-if test "$OS_TARGET" = Android; then
++if test "$OS_TARGET" = Android -a x"$MOZ_WIDGET_TOOLKIT" != x"gonk"; then
+     MOZ_FMP4=1
+ fi
+ 

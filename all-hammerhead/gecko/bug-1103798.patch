@@ -1,0 +1,23 @@
+# HG changeset patch
+# User Kai-Zhen Li <kli@mozilla.com>
+# Date 1416799817 -28800
+#      Mon Nov 24 11:30:17 2014 +0800
+# Node ID 9666a76e2ddb19c02ae25fa53f3d8d74a8421fcb
+# Parent  8c02f3280d0c1c5b3140c96e8ce3a121a6456893
+Bug 1103798 - Include correct file for api level >= 21. r=mwu
+
+diff --git a/hal/gonk/GonkHal.cpp b/hal/gonk/GonkHal.cpp
+--- a/hal/gonk/GonkHal.cpp
++++ b/hal/gonk/GonkHal.cpp
+@@ -27,7 +27,11 @@
+ #include <sys/syscall.h>
+ #include <sys/resource.h>
+ #include <time.h>
++#if ANDROID_VERSION >= 21
++#include <limits.h>
++#else
+ #include <asm/page.h>
++#endif
+ 
+ #include "mozilla/DebugOnly.h"
+ 

@@ -1,0 +1,13 @@
+diff --git a/mozglue/build/BionicGlue.cpp b/mozglue/build/BionicGlue.cpp
+index ec4ec6a..779e024 100644
+--- a/mozglue/build/BionicGlue.cpp
++++ b/mozglue/build/BionicGlue.cpp
+@@ -169,7 +169,7 @@ __wrap_PR_SetEnv(const char *string)
+     if ( !strchr(string, '=')) return(-1);
+ 
+     pthread_mutex_lock(&_pr_envLock);
+-    result = putenv(string);
++    result = putenv((char *)string);
+     pthread_mutex_unlock(&_pr_envLock);
+     return (result)? -1 : 0;
+ }

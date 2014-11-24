@@ -1,14 +1,12 @@
-From 72805d1244655cd254db44e5742c39c62480d5b8 Mon Sep 17 00:00:00 2001
-From: Kai-Zhen Li <kli@mozilla.com>
-Date: Sun, 16 Nov 2014 23:21:18 +0800
-Subject: [PATCH 07/14] Update ipc/keystore/KeyStore.cpp for gonk-L.
-
----
- ipc/keystore/KeyStore.cpp | 16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
+# HG changeset patch
+# User Kai-Zhen Li <kli@mozilla.com>
+# Date 1416503526 -28800
+#      Fri Nov 21 01:12:06 2014 +0800
+# Node ID ac02ee1899d12cf42960627fb55ef796339b7ff5
+# Parent  38f4c3723b797fcc4415e71e086a52b6108cc285
+Bug 1102324 - Update date ipc/keystore/KeyStore.cpp for api level 21. r=chulee
 
 diff --git a/ipc/keystore/KeyStore.cpp b/ipc/keystore/KeyStore.cpp
-index 6cf1068..712fac4 100644
 --- a/ipc/keystore/KeyStore.cpp
 +++ b/ipc/keystore/KeyStore.cpp
 @@ -69,7 +69,13 @@ public:
@@ -41,6 +39,3 @@ index 6cf1068..712fac4 100644
    virtual int32_t generate(const String16& name, int uid, int32_t flags) {return ::UNDEFINED_ACTION;}
    virtual int32_t is_hardware_backed() {return ::UNDEFINED_ACTION;}
  #else
--- 
-1.9.1
-
