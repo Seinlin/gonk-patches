@@ -1,8 +1,8 @@
 diff --git a/security/manager/android_stub.h b/security/manager/android_stub.h
-index 9998953..165b22c 100644
+index 9998953..8406324 100644
 --- a/security/manager/android_stub.h
 +++ b/security/manager/android_stub.h
-@@ -17,4 +17,13 @@
+@@ -17,4 +17,9 @@
  
  #define sysinfo(foo) -1
  
