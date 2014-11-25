@@ -1,7 +1,7 @@
 diff --git a/security/manager/android_stub.h b/security/manager/android_stub.h
 --- a/security/manager/android_stub.h
 +++ b/security/manager/android_stub.h
-@@ -10,11 +10,18 @@
+@@ -10,11 +10,15 @@
  
  /* sysinfo is defined but not implemented.
   * we may be able to implement it ourselves. */
@@ -10,12 +10,9 @@ diff --git a/security/manager/android_stub.h b/security/manager/android_stub.h
  #include <sys/cdefs.h>
  #include <linux/kernel.h>
  
-+#if ANDROID_VERSION >= 21
-+#include "mozilla-config.h"
 +
 +#undef RTLD_NOLOAD
 +extern int getdtablesize(void);
-+#endif
 +
  #define sysinfo(foo) -1
  
