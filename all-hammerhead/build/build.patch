@@ -1,0 +1,20 @@
+From a157c8b483af7fbd32f2fb922ee803952394c40c Mon Sep 17 00:00:00 2001
+From: Kai-Zhen Li <kli@mozilla.com>
+Date: Fri, 3 Apr 2015 23:44:59 +0800
+Subject: [PATCH] Bug 1150904 - Disable libhwui and hwuitest.
+
+---
+ core/disabled_modules.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/disabled_modules.mk b/core/disabled_modules.mk
+index 8ef55d7..a93c824 100644
+--- a/core/disabled_modules.mk
++++ b/core/disabled_modules.mk
+@@ -14,4 +14,6 @@ DISABLED_USER_MODULES := \
+ 	xaplay \
+ 	librs_jni \
+ 	libandroid_runtime \
++	libhwui \
++	hwuitest \
+ 
